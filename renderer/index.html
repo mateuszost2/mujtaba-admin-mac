@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mujtaba Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0C0C0B; --bg2: #141412; --bg3: #1C1C19;
+  --text: #E8E4DC; --text2: #8C8880; --text3: #4A4845;
+  --accent: #C9A96E; --border: rgba(255,255,255,0.07);
+  --error: #d97070; --success: #7ab87a;
+  --ease: cubic-bezier(0.25,0,0,1);
+  --trans: 200ms var(--ease);
+}
+html.light {
+  --bg: #FAFAF8; --bg2: #F2F0EC; --bg3: #E8E5DE;
+  --text: #1A1918; --text2: #5C5854; --text3: #9C9890;
+  --accent: #8B6914; --border: rgba(0,0,0,0.09);
+  --error: #c0392b; --success: #2e7d32;
+}
+html.light .nav-item:hover { background: rgba(0,0,0,0.03); }
+html.light .nav-item.active { background: rgba(139,105,20,0.08); }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-weight: 300; font-size: 13px; line-height: 1.5; }
+::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--text3); border-radius: 2px; }
+
+/* ── LAYOUT ── */
+.app { display: flex; flex-direction: column; height: 100vh; }
+.titlebar { height: 32px; background: var(--bg); -webkit-app-region: drag; flex-shrink: 0; }
+.main { display: flex; flex: 1; overflow: hidden; }
+.sidebar { width: 200px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; transition: width 200ms var(--ease); overflow: hidden; }
+.sidebar.collapsed { width: 52px; }
+.sidebar.collapsed .sidebar-logo { padding: 10px 0; }
+.sidebar.collapsed .sidebar-logo-row { justify-content: center; }
+.sidebar.collapsed .sidebar-logo-text { display: none; }
+.sidebar.collapsed .sidebar-logo-row { justify-content: flex-end; }
+.sidebar.collapsed .theme-icon-btn { display: none; }
+.sidebar.collapsed .conn-status { padding: 10px 0; justify-content: center; }
+.sidebar.collapsed #conn-label { display: none; }
+.sidebar.collapsed .nav-item { justify-content: center; padding: 12px 0; gap: 0; }
+.sidebar.collapsed .nav-label { display: none; }
+.sidebar.collapsed .sidebar-bottom { display: none; }
+.sidebar.collapsed #queue-panel { display: none !important; }
+html.light .sidebar.collapsed .nav-item:hover { background: rgba(0,0,0,0.03); }
+.sidebar-logo-btns { display: flex; gap: 2px; align-items: flex-start; flex-shrink: 0; }
+.sidebar-toggle-btn { background: none; border: none; cursor: pointer; color: var(--text3); padding: 3px; display: flex; align-items: center; transition: color var(--trans); }
+.sidebar-toggle-btn:hover { color: var(--accent); }
+.sidebar-toggle-btn svg { width: 15px; height: 15px; fill: currentColor; }
+.content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.content-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+/* ── SIDEBAR ── */
+.sidebar-logo { padding: 20px 20px 16px; font-family: 'Cormorant Garamond', serif; border-bottom: 1px solid var(--border); }
+.sidebar-logo-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.sidebar-logo-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.sidebar-logo-mark { width: 28px; height: 28px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: var(--accent); }
+.sidebar-logo-mark svg { width: 18px; height: 18px; }
+.sidebar.collapsed .sidebar-logo-left { display: none; }
+.sidebar-logo-name { font-size: 18px; font-style: italic; font-weight: 300; color: var(--text); line-height: 1.2; }
+.sidebar-logo-sub { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-top: 5px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+.theme-icon-btn { background: none; border: none; cursor: pointer; color: var(--text3); padding: 3px; margin-top: 1px; flex-shrink: 0; display: flex; align-items: center; transition: color var(--trans); }
+.theme-icon-btn:hover { color: var(--accent); }
+.theme-icon-btn svg { width: 15px; height: 15px; fill: currentColor; }
+.conn-status { padding: 12px 20px; display: flex; align-items: center; gap: 8px; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); border-bottom: 1px solid var(--border); }
+.conn-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); flex-shrink: 0; transition: background var(--trans); }
+.conn-dot.connected { background: var(--success); }
+.nav { flex: 1; padding: 8px 0; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); transition: color var(--trans), background var(--trans); border: none; background: none; width: 100%; text-align: left; }
+.nav-item:hover { color: var(--text2); background: rgba(255,255,255,0.02); }
+.nav-item.active { color: var(--accent); background: rgba(201,169,110,0.06); }
+.nav-item svg { width: 14px; height: 14px; fill: currentColor; flex-shrink: 0; }
+.sidebar-bottom { padding: 16px 20px; border-top: 1px solid var(--border); }
+.disconnect-btn { background: none; border: 1px solid var(--border); cursor: pointer; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text2); font-family: 'DM Sans', sans-serif; transition: all var(--trans); padding: 8px 0; width: 100%; }
+.disconnect-btn:hover { background: var(--error); border-color: var(--error); color: var(--bg); }
+.save-all-btn { background: none; border: 1px solid var(--accent); cursor: pointer; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); font-family: 'DM Sans', sans-serif; transition: all var(--trans); padding: 8px 0; width: 100%; margin-bottom: 12px; }
+.save-all-btn:hover { background: var(--accent); color: var(--bg); }
+.save-all-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── STATUS BAR ── */
+.status-bar { padding: 0 32px; height: 32px; display: flex; align-items: center; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; border-bottom: 1px solid transparent; transition: all var(--trans); flex-shrink: 0; }
+.status-bar.success { color: var(--accent); border-bottom-color: rgba(201,169,110,0.15); background: rgba(201,169,110,0.04); }
+.status-bar.error { color: var(--error); border-bottom-color: rgba(217,112,112,0.15); background: rgba(217,112,112,0.04); }
+
+
+/* ── CONNECT SCREEN ── */
+.connect-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; }
+.connect-box { width: 100%; max-width: 440px; }
+.connect-title { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 300; font-style: italic; color: var(--text); margin-bottom: 8px; }
+.connect-sub { font-size: 12px; color: var(--text3); margin-bottom: 40px; }
+.field { border-bottom: 1px solid var(--border); margin-bottom: 0; transition: border-color var(--trans); }
+.field:focus-within { border-bottom-color: var(--accent); }
+.field label { display: block; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text3); padding-top: 16px; margin-bottom: 4px; }
+.field input { width: 100%; background: none; border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 300; color: var(--text); padding-bottom: 12px; }
+.field input::placeholder { color: var(--text3); }
+.field-row { display: grid; grid-template-columns: 1fr auto; gap: 0; align-items: end; }
+.field-row input { padding-bottom: 12px; }
+.pick-btn { background: none; border: none; cursor: pointer; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); padding: 0 0 13px 16px; font-family: 'DM Sans', sans-serif; white-space: nowrap; transition: color var(--trans); }
+.pick-btn:hover { color: var(--accent); }
+.connect-btn { margin-top: 32px; display: flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text); padding: 0; transition: color var(--trans); }
+.connect-btn:hover { color: var(--accent); }
+.connect-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.connect-btn-line { width: 32px; height: 1px; background: currentColor; transition: width var(--trans); }
+.connect-btn:hover .connect-btn-line { width: 48px; }
+.connect-error { margin-top: 16px; font-size: 11px; color: var(--error); }
+
+/* ── SECTION HEADER ── */
+.section-head { padding: 10px 32px; height: 44px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.section-head-title { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); }
+.section-head-count { font-size: 9px; color: var(--text3); letter-spacing: 0.1em; }
+
+/* ── UPLOAD ZONE ── */
+.upload-zone { margin: 20px 32px; border: 1px dashed rgba(201,169,110,0.25); padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: border-color var(--trans), background var(--trans); }
+.upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); background: rgba(201,169,110,0.04); }
+.upload-zone-text { font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text3); }
+.upload-zone-text span { color: var(--accent); }
+.upload-progress { width: 100%; max-width: 240px; height: 1px; background: var(--border); display: none; margin-top: 4px; }
+.upload-progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.2s ease; }
+
+/* ── LIST ── */
+.items-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); margin: 0 32px 32px; }
+.list-item { background: var(--bg); transition: background var(--trans); }
+.list-item-row { display: flex; align-items: center; gap: 14px; padding: 12px 16px; }
+.list-item-row:hover { background: var(--bg2); }
+.list-thumb { flex-shrink: 0; background: var(--bg3); overflow: hidden; border-radius: 2px; }
+.list-thumb.video { width: 72px; height: 40px; }
+.list-thumb.photo { width: 56px; height: 38px; }
+.list-thumb.portrait { width: 32px; height: 42px; }
+.list-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity var(--trans); }
+.list-thumb { position: relative; cursor: pointer; }
+.list-thumb::after { content: 'Change'; position: absolute; inset: 0; background: rgba(12,12,11,0.7); display: flex; align-items: center; justify-content: center; font-size: 8px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); opacity: 0; transition: opacity var(--trans); font-family: 'DM Sans', sans-serif; }
+.list-thumb:hover::after { opacity: 1; }
+.list-item-name { flex: 1; font-size: 9px; letter-spacing: 0.1em; color: var(--text2); text-transform: uppercase; word-break: break-all; line-height: 1.5; }
+.list-item-meta { font-size: 9px; color: var(--accent); opacity: 0.6; flex-shrink: 0; letter-spacing: 0.1em; }
+.list-item-actions { display: flex; gap: 14px; flex-shrink: 0; }
+.list-btn { background: none; border: none; cursor: pointer; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; font-family: 'DM Sans', sans-serif; padding: 3px 0; transition: color var(--trans); }
+.list-btn.edit { color: var(--text3); }
+.list-btn.edit:hover, .list-btn.edit.active { color: var(--accent); }
+.list-btn.remove { color: var(--text3); }
+.list-btn.remove:hover { color: var(--error); }
+
+/* ── EDIT PANEL ── */
+.edit-panel { display: none; padding: 16px 20px 20px; border-top: 1px solid var(--border); background: var(--bg2); }
+.edit-panel.open { display: block; }
+.edit-panel .field { margin-bottom: 0; }
+.edit-panel .field:last-of-type { margin-bottom: 16px; }
+.edit-panel textarea { min-height: 56px; }
+.save-btn { display: flex; align-items: center; gap: 8px; background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text3); padding: 0; transition: color var(--trans); }
+.save-btn:hover { color: var(--accent); }
+.save-btn.saved { color: var(--accent); }
+.save-btn-line { width: 16px; height: 1px; background: currentColor; }
+
+.empty-state { padding: 64px 32px; text-align: center; color: var(--text3); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
+
+/* ── SINGLE SECTION ── */
+.single-section { padding: 24px 32px 32px; }
+.single-title { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); margin-bottom: 24px; }
+.single-items { display: flex; flex-direction: column; gap: 1px; background: var(--border); margin-bottom: 24px; }
+.single-item { background: var(--bg); padding: 14px 16px; display: flex; align-items: center; gap: 14px; transition: background var(--trans); }
+.single-item:hover { background: var(--bg2); }
+.single-item-name { flex: 1; font-size: 9px; letter-spacing: 0.1em; color: var(--text2); text-transform: uppercase; word-break: break-all; }
+.single-remove { background: none; border: none; cursor: pointer; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); font-family: 'DM Sans', sans-serif; padding: 0; transition: color var(--trans); }
+.single-remove:hover { color: var(--error); }
+.single-upload-zone { border: 1px dashed rgba(201,169,110,0.25); padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: border-color var(--trans), background var(--trans); }
+.single-upload-zone:hover { border-color: var(--accent); background: rgba(201,169,110,0.04); }
+.single-upload-zone-text { font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text3); }
+.single-upload-zone-text span { color: var(--accent); }
+
+/* ── CONFIRM ── */
+#confirm-overlay { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(12,12,11,0.9); align-items: center; justify-content: center; }
+#confirm-overlay.open { display: flex; }
+.confirm-box { background: var(--bg2); border: 1px solid var(--border); padding: 36px; max-width: 380px; width: 100%; margin: 24px; }
+.confirm-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 300; color: var(--text); margin-bottom: 10px; }
+.confirm-text { font-size: 12px; color: var(--text2); margin-bottom: 28px; line-height: 1.6; }
+.confirm-btns { display: flex; gap: 14px; }
+.confirm-cancel { background: none; border: 1px solid var(--border); color: var(--text2); padding: 8px 20px; font-family: 'DM Sans', sans-serif; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; transition: all var(--trans); }
+.confirm-cancel:hover { border-color: var(--text2); color: var(--text); }
+.confirm-delete { background: var(--error); border: 1px solid var(--error); color: #fff; padding: 8px 20px; font-family: 'DM Sans', sans-serif; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; transition: opacity var(--trans); }
+.confirm-delete:hover { opacity: 0.8; }
+
+/* ── UPLOAD QUEUE (sidebar) ── */
+#queue-panel { flex-shrink:0; border-top:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+#queue-panel.collapsed #queue-items-list { display:none; }
+.queue-header { display:flex; align-items:center; gap:8px; padding:10px 20px; cursor:pointer; user-select:none; }
+.queue-header:hover .queue-title { color:var(--text2); }
+.queue-title { font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:var(--text3); transition:color var(--trans); }
+.queue-count { font-size:9px; color:var(--text3); opacity:0.7; }
+.queue-toggle { margin-left:auto; font-size:10px; color:var(--text3); line-height:1; }
+#queue-items-list { overflow-y:auto; max-height:162px; }
+.q-item { padding:6px 20px; border-top:1px solid var(--border); }
+.q-item-top { display:flex; align-items:center; gap:7px; }
+.q-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; background:var(--text3); }
+.q-dot.uploading { background:var(--accent); animation:qpulse 1s ease-in-out infinite; }
+.q-dot.done { background:var(--success); }
+.q-dot.error { background:var(--error); }
+@keyframes qpulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.q-name { flex:1; font-size:9px; letter-spacing:0.06em; color:var(--text2); text-transform:uppercase; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.q-name.muted { color:var(--text3); }
+.q-action { background:none; border:none; cursor:pointer; color:var(--text3); padding:0; font-size:12px; line-height:1; flex-shrink:0; transition:color var(--trans); font-family:'DM Sans',sans-serif; }
+.q-action:hover { color:var(--error); }
+.q-item-prog { display:flex; align-items:center; gap:7px; margin-top:4px; padding-left:12px; }
+.q-bar { flex:1; height:1px; background:var(--border); }
+.q-bar-fill { height:100%; background:var(--accent); transition:width 0.12s ease; }
+.q-pct { font-size:8px; color:var(--text3); flex-shrink:0; min-width:22px; text-align:right; font-variant-numeric:tabular-nums; }
+.q-item-status { font-size:8px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text3); padding:3px 0 0 12px; }
+.q-item-status.error { color:var(--error); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="titlebar"></div>
+
+  <div id="connect-view" class="main" style="display:flex;">
+    <div class="connect-screen">
+      <div class="connect-box">
+        <div class="connect-title">Mujtaba Admin</div>
+        <div class="connect-sub">Connect to your Hetzner server</div>
+
+        <div class="field"><label>Host / IP</label><input id="c-host" type="text" placeholder="mujtabamanzoor.com"></div>
+        <div class="field"><label>Username</label><input id="c-user" type="text" placeholder="server"></div>
+        <div class="field"><label>Password</label><input id="c-pass" type="password" placeholder="••••••••"></div>
+        <div class="field">
+          <label>SSH Key (optional)</label>
+          <div class="field-row">
+            <input id="c-key" type="text" placeholder="or browse for key file…" readonly>
+            <button class="pick-btn" id="pick-key-btn">Browse</button>
+            <button class="pick-btn" id="clear-key-btn" style="display:none;">Remove</button>
+          </div>
+        </div>
+        <div class="field" id="passphrase-field" style="display:none;"><label>Key Passphrase</label><input id="c-passphrase" type="password" placeholder="passphrase for SSH key"></div>
+        <button class="connect-btn" id="connect-btn">
+          <span class="connect-btn-line"></span>
+          Connect
+        </button>
+        <div class="connect-error" id="connect-error"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="admin-view" class="main" style="display:none;">
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-row">
+          <div class="sidebar-logo-left">
+            <div class="sidebar-logo-mark">
+              <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="Georgia,serif" font-size="13" fill="currentColor">M</text>
+              </svg>
+            </div>
+            <div class="sidebar-logo-text">
+              <div class="sidebar-logo-name">Mujtaba Manzoor</div>
+              <div class="sidebar-logo-sub">Admin</div>
+            </div>
+          </div>
+          <div class="sidebar-logo-btns">
+          <button class="theme-icon-btn" id="theme-btn" title="Toggle theme">
+            <svg id="theme-sun" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.25a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-1.5 0V3a.75.75 0 0 1 .75-.75zM7.5 12a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0zM18.894 6.166a.75.75 0 0 0-1.06-1.06l-1.591 1.59a.75.75 0 1 0 1.06 1.061l1.591-1.59zM21.75 12a.75.75 0 0 1-.75.75h-2.25a.75.75 0 0 1 0-1.5H21a.75.75 0 0 1 .75.75zM17.834 18.894a.75.75 0 0 0 1.06-1.06l-1.59-1.591a.75.75 0 1 0-1.061 1.06l1.59 1.591zM12 18a.75.75 0 0 1 .75.75V21a.75.75 0 0 1-1.5 0v-2.25A.75.75 0 0 1 12 18zM7.584 17.573a.75.75 0 0 0-1.061-1.06l-1.59 1.591a.75.75 0 1 0 1.06 1.06l1.591-1.59zM6 12a.75.75 0 0 1-.75.75H3a.75.75 0 0 1 0-1.5h2.25A.75.75 0 0 1 6 12zM6.166 5.106a.75.75 0 0 0-1.06 1.06l1.59 1.591a.75.75 0 1 0 1.061-1.06l-1.59-1.591z"/></svg>
+            <svg id="theme-moon" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><path d="M9.528 1.718a.75.75 0 0 1 .162.819A8.97 8.97 0 0 0 9 6a9 9 0 0 0 9 9 8.97 8.97 0 0 0 3.463-.69.75.75 0 0 1 .981.98 10.503 10.503 0 0 1-9.694 6.46c-5.799 0-10.5-4.7-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 0 1 .818.162z"/></svg>
+          </button>
+          <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" title="Collapse sidebar">
+            <svg id="sidebar-chevron" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+          </button>
+          </div>
+        </div>
+      </div>
+      <div class="conn-status">
+        <div class="conn-dot connected" id="conn-dot"></div>
+        <span id="conn-label">Connected</span>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-tab="documentaries">
+          <svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V4h-4z"/></svg>
+          <span class="nav-label">Documentaries</span>
+        </button>
+        <button class="nav-item" data-tab="ngo_works">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+          <span class="nav-label">NGO Work</span>
+        </button>
+        <button class="nav-item" data-tab="photos">
+          <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+          <span class="nav-label">Photography</span>
+        </button>
+        <button class="nav-item" data-tab="hero_video">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <span class="nav-label">Hero Video</span>
+        </button>
+        <button class="nav-item" data-tab="about_photo">
+          <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          <span class="nav-label">About Photo</span>
+        </button>
+      </nav>
+      <div id="queue-panel" style="display:none;">
+        <div class="queue-header" id="queue-toggle-header">
+          <span class="queue-title">Uploads</span>
+          <span class="queue-count" id="queue-count"></span>
+          <span class="queue-toggle" id="queue-toggle-icon">∧</span>
+        </div>
+        <div id="queue-items-list"></div>
+      </div>
+      <div class="sidebar-bottom">
+        <button class="save-all-btn" id="save-all-btn">Save All</button>
+        <button class="disconnect-btn" id="disconnect-btn">Disconnect</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="content-scroll">
+        <div class="status-bar" id="status-bar"></div>
+        <div id="tab-content"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-title">Delete file?</div>
+    <div class="confirm-text" id="confirm-text"></div>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" id="confirm-cancel">Cancel</button>
+      <button class="confirm-delete" id="confirm-delete">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let manifest = {};
+let metadata = {};
+let currentTab = 'documentaries';
+let remotePath = '';
+let pendingDelete = null;
+
+const FOLDER_MAP = {
+  documentaries: 'videos/documentaries',
+  ngo_works:     'videos/ngo_works',
+  photos:        'pictures/documentary_photography',
+  hero_video:    'videos/main_video',
+  about_photo:   'pictures/about_me_pic',
+};
+
+// ── INIT ──
+window.addEventListener('DOMContentLoaded', async () => {
+  const config = await window.api.loadConfig();
+  if (config) {
+    document.getElementById('c-host').value = config.host || '';
+    document.getElementById('c-user').value = config.username || '';
+    document.getElementById('c-key').value = config.keyPath || '';
+  }
+  updatePassphraseVisibility();
+});
+
+// ── CONNECT ──
+function updatePassphraseVisibility() {
+  const hasKey = document.getElementById('c-key').value.trim() !== '';
+  document.getElementById('passphrase-field').style.display = hasKey ? '' : 'none';
+  document.getElementById('pick-key-btn').style.display = hasKey ? 'none' : '';
+  document.getElementById('clear-key-btn').style.display = hasKey ? '' : 'none';
+  if (!hasKey) document.getElementById('c-passphrase').value = '';
+}
+
+document.getElementById('pick-key-btn').addEventListener('click', async () => {
+  const f = await window.api.pickKeyFile();
+  if (f) document.getElementById('c-key').value = f;
+  updatePassphraseVisibility();
+});
+
+document.getElementById('clear-key-btn').addEventListener('click', () => {
+  document.getElementById('c-key').value = '';
+  updatePassphraseVisibility();
+});
+
+document.getElementById('connect-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('connect-btn');
+  const errEl = document.getElementById('connect-error');
+  errEl.textContent = '';
+  btn.disabled = true;
+  btn.lastChild.textContent = ' Connecting…';
+
+  const config = {
+    host: document.getElementById('c-host').value.trim(),
+    username: document.getElementById('c-user').value.trim(),
+    password: document.getElementById('c-pass').value,
+    keyPath: document.getElementById('c-key').value.trim(),
+    passphrase: document.getElementById('c-passphrase').value,
+    remotePath: '/home/server/mujtaba-website',
+    port: 22,
+  };
+
+  remotePath = config.remotePath;
+
+  const res = await window.api.connect(config);
+  btn.disabled = false;
+  btn.lastChild.textContent = ' Connect';
+
+  if (res.ok) {
+    await window.api.saveConfig(config);
+    showAdmin();
+    await loadData();
+  } else {
+    errEl.textContent = res.error || 'Connection failed';
+  }
+});
+
+function showAdmin() {
+  document.getElementById('connect-view').style.display = 'none';
+  document.getElementById('admin-view').style.display = 'flex';
+}
+
+// ── DISCONNECT ──
+document.getElementById('disconnect-btn').addEventListener('click', async () => {
+  await window.api.disconnect();
+  uploadQueue = []; uploadRunning = false; uploadQueueCollapsed = false; activeQueueItem = null; needsManifestRegen = false; renderQueue();
+  document.getElementById('admin-view').style.display = 'none';
+  document.getElementById('connect-view').style.display = 'flex';
+  document.getElementById('c-pass').value = '';
+});
+
+document.getElementById('sidebar-toggle-btn').addEventListener('click', () => {
+  const sidebar = document.querySelector('.sidebar');
+  const chevron = document.getElementById('sidebar-chevron');
+  const collapsed = sidebar.classList.toggle('collapsed');
+  chevron.style.transform = collapsed ? 'rotate(180deg)' : '';
+});
+
+// ── LOAD DATA ──
+// ── PROGRESS ──
+function progStart() {}
+function progSet() {}
+function progDone() {}
+
+async function loadData() {
+  progStart();
+  setStatus('Loading…', '');
+  const mRes = await window.api.readJson(remotePath + '/manifest.json');
+  const mdRes = await window.api.readJson(remotePath + '/metadata.json');
+  if (mRes.ok) manifest = mRes.data;
+  else { progDone(); setStatus('Error loading manifest: ' + mRes.error, 'error'); return; }
+  if (mdRes.ok) metadata = mdRes.data;
+  progDone();
+  setStatus('', '');
+  renderTab(currentTab);
+}
+
+// ── TABS ──
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTab = btn.dataset.tab;
+    renderTab(currentTab);
+  });
+});
+
+function renderTab(tab) {
+  currentTab = tab;
+  const isSingle = tab === 'hero_video' || tab === 'about_photo';
+  if (isSingle) renderSingleTab(tab);
+  else renderListTab(tab);
+  loadThumbnails();
+}
+
+// ── LIST TAB ──
+function renderListTab(tab) {
+  const isPhotos = tab === 'photos';
+  const items = manifest[tab] || [];
+  const labels = { documentaries: 'Documentaries', ngo_works: 'NGO Work', photos: 'Photography' };
+
+  let html = `
+    <div class="section-head">
+      <span class="section-head-title">${labels[tab]}</span>
+      <span class="section-head-count">${items.length} item${items.length !== 1 ? 's' : ''}</span>
+    </div>
+    <div class="upload-zone" id="upload-zone">
+      <div class="upload-zone-text">Drop files here or <span>click to upload</span></div>
+      <div class="upload-zone-text" style="opacity:0.5;">${isPhotos ? 'jpg, png, webp' : 'mp4, mov, webm'}</div>
+      <div class="upload-progress" id="upload-progress"><div class="upload-progress-bar" id="upload-progress-bar"></div></div>
+    </div>
+    <div class="items-list" id="items-list">`;
+
+  if (items.length === 0) {
+    html += `<div class="empty-state">No files in this category</div>`;
+  } else {
+    items.forEach(item => {
+      const file = typeof item === 'object' ? (item.filename || item) : item;
+      const meta = metadata[file] || {};
+      const title = meta.title || '';
+      const year = meta.year || '';
+      const thumbSrc = isPhotos
+        ? remotePath + '/pictures/documentary_photography/compressed/' + file.replace(/\.[^.]+$/, '.jpg')
+        : (item.thumb ? remotePath + '/' + item.thumb : '');
+      const displayName = title || file;
+      const thumbClass = isPhotos ? 'photo' : 'video';
+
+      html += `
+        <div class="list-item" data-file="${esc(file)}">
+          <div class="list-item-row">
+            <div class="list-thumb ${thumbClass}">
+              <img src="" data-remote="${esc(thumbSrc)}" alt="" class="remote-img" onerror="this.style.opacity=0">
+            </div>
+            <div class="list-item-name">${esc(displayName)}</div>
+            ${year ? `<div class="list-item-meta">${esc(year)}</div>` : ''}
+            <div class="list-item-actions">
+              <button class="list-btn edit">Edit</button>
+              <button class="list-btn remove">Remove</button>
+            </div>
+          </div>
+          <div class="edit-panel">
+            <div class="field"><label>Title</label><input type="text" class="f-title" value="${esc(title)}"></div>
+            ${!isPhotos ? `
+            <div class="field"><label>Year</label><input type="number" class="f-year" value="${esc(year)}"></div>
+            <div class="field"><label>My Role</label><input type="text" class="f-role" value="${esc(meta.role || '')}"></div>` : ''}
+            <div class="field" style="margin-bottom:16px;"><label>Description</label><textarea class="f-desc">${esc(meta.description || '')}</textarea></div>
+            <button class="save-btn"><span class="save-btn-line"></span> Save</button>
+          </div>
+        </div>`;
+    });
+  }
+
+  html += `</div>`;
+  document.getElementById('tab-content').innerHTML = html;
+
+  // Load thumbnails
+  document.querySelectorAll('.remote-img').forEach(async img => {
+    const res = await window.api.readFileBase64(img.dataset.remote);
+    if (res.ok) img.src = 'data:image/jpeg;base64,' + res.data;
+  });
+
+  // Edit toggles
+  document.querySelectorAll('.list-item').forEach(el => {
+    const file = el.dataset.file;
+    const editBtn = el.querySelector('.list-btn.edit');
+    const panel = el.querySelector('.edit-panel');
+    editBtn.addEventListener('click', () => {
+      const open = panel.classList.toggle('open');
+      editBtn.classList.toggle('active', open);
+      editBtn.textContent = open ? 'Close' : 'Edit';
+    });
+    el.querySelector('.list-btn.remove').addEventListener('click', () => confirmDelete(file, tab));
+    el.querySelector('.list-thumb').addEventListener('click', async () => {
+      const files = await window.api.pickFiles('image');
+      if (!files.length) return;
+      const base = file.replace(/\.[^.]+$/, '');
+      const folder = FOLDER_MAP[tab];
+      const remoteDest = `${remotePath}/${folder}/${base}.jpg`;
+      setStatus(`Uploading thumbnail for ${file}…`, '');
+      const res = await window.api.uploadFile(files[0], remoteDest);
+      if (res.ok) {
+        setStatus(`Thumbnail set for ${file}`, 'success');
+        const img = el.querySelector('.remote-img');
+        if (img) {
+          const r = await window.api.readFileBase64(remoteDest);
+          if (r.ok) img.src = 'data:image/jpeg;base64,' + r.data;
+        }
+      } else {
+        setStatus(`Error: ${res.error}`, 'error');
+      }
+    });
+    el.querySelector('.save-btn').addEventListener('click', function() { saveItem(file, this, el); });
+  });
+
+  // Upload zone
+  const zone = document.getElementById('upload-zone');
+  zone.addEventListener('click', async () => {
+    const files = await window.api.pickFiles(isPhotos ? 'image' : 'video');
+    if (files.length) uploadFiles(files, tab);
+  });
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('dragover');
+    const files = [...e.dataTransfer.files].map(f => f.path);
+    if (files.length) uploadFiles(files, tab);
+  });
+}
+
+
+// ── SINGLE TAB ──
+function renderSingleTab(tab) {
+  const isVideo = tab === 'hero_video';
+  const items = isVideo ? (manifest.main_video || []) : (manifest.about_img || []);
+  const title = isVideo ? 'Hero Video' : 'About Photo';
+  const accept = isVideo ? 'video' : 'image';
+  const hint = isVideo ? 'mp4, mov, webm' : 'jpg, png, webp';
+  const serverTab = isVideo ? 'hero_video' : 'about_photo';
+
+  let itemsHtml = '';
+  if (items.length === 0) {
+    itemsHtml = `<div class="empty-state" style="padding:32px 0;margin-bottom:24px;">No files</div>`;
+  } else {
+    itemsHtml = `<div class="single-items">`;
+    items.forEach(item => {
+      const file = typeof item === 'object' ? item.filename : item;
+      const thumbSrc = isVideo
+        ? (item.thumb ? remotePath + '/' + item.thumb : '')
+        : remotePath + '/pictures/about_me_pic/' + file;
+      itemsHtml += `
+        <div class="single-item">
+          <div class="list-thumb ${isVideo ? 'video' : 'portrait'}">
+            <img src="" data-remote="${esc(thumbSrc)}" alt="" class="remote-img" style="opacity:0">
+          </div>
+          <div class="single-item-name">${esc(file)}</div>
+          <button class="single-remove" data-file="${esc(file)}" data-tab="${serverTab}">Remove</button>
+        </div>`;
+    });
+    itemsHtml += `</div>`;
+  }
+
+  document.getElementById('tab-content').innerHTML = `
+    <div class="section-head">
+      <span class="section-head-title">${title}</span>
+      <span class="section-head-count">${items.length} file${items.length !== 1 ? 's' : ''}</span>
+    </div>
+    <div class="single-section">
+      <div class="single-upload-zone" id="single-upload-zone">
+        <div class="single-upload-zone-text">${items.length > 0 ? 'Change' : 'Upload'} ${isVideo ? 'video' : 'photo'} — <span>click to browse</span></div>
+        <div class="single-upload-zone-text" style="opacity:0.5;">${hint}</div>
+      </div>
+      ${itemsHtml}
+    </div>`;
+
+  document.querySelectorAll('.single-remove').forEach(btn => {
+    btn.addEventListener('click', () => confirmDelete(btn.dataset.file, btn.dataset.tab));
+  });
+
+  async function clearExisting() {
+    if (!items.length) return;
+    const oldItem = items[0];
+    const oldFile = typeof oldItem === 'object' ? (oldItem.filename || oldItem) : oldItem;
+    const folder = FOLDER_MAP[serverTab];
+    await window.api.deleteFile(`${remotePath}/${folder}/${oldFile}`);
+    if (serverTab === 'hero_video') {
+      const base = oldFile.replace(/\.[^.]+$/, '');
+      await window.api.deleteFile(`${remotePath}/${folder}/${base}.jpg`);
+    }
+    if (metadata[oldFile]) {
+      delete metadata[oldFile];
+      await window.api.writeJson(remotePath + '/metadata.json', metadata);
+    }
+  }
+
+  const zone = document.getElementById('single-upload-zone');
+  zone.addEventListener('click', async () => {
+    const files = await window.api.pickFiles(accept);
+    if (!files.length) return;
+    await clearExisting();
+    uploadFiles([files[0]], serverTab);
+  });
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--accent)'; });
+  zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
+  zone.addEventListener('drop', async e => {
+    e.preventDefault(); zone.style.borderColor = '';
+    const files = [...e.dataTransfer.files].map(f => f.path);
+    if (!files.length) return;
+    await clearExisting();
+    uploadFiles([files[0]], serverTab);
+  });
+}
+
+// ── UPLOAD QUEUE ──
+let uploadQueue = [];
+let uploadRunning = false;
+let uploadQueueCollapsed = false;
+let uploadIdCounter = 0;
+let activeQueueItem = null;
+let needsManifestRegen = false;
+
+window.api.onUploadProgress(pct => {
+  if (!activeQueueItem) return;
+  activeQueueItem.progress = pct;
+  const el = document.querySelector(`.q-item[data-id="${activeQueueItem.id}"]`);
+  if (el) {
+    const fill = el.querySelector('.q-bar-fill');
+    const pctEl = el.querySelector('.q-pct');
+    if (fill) fill.style.width = pct + '%';
+    if (pctEl) pctEl.textContent = pct + '%';
+  }
+  progSet(pct);
+});
+
+document.getElementById('queue-toggle-header').addEventListener('click', () => {
+  uploadQueueCollapsed = !uploadQueueCollapsed;
+  renderQueue();
+});
+
+function uploadFiles(localPaths, tab) {
+  const folder = FOLDER_MAP[tab];
+  if (!folder) return;
+  for (const localPath of localPaths) {
+    const filename = localPath.split(/[\\/]/).pop();
+    uploadQueue.push({
+      id: ++uploadIdCounter,
+      localPath, filename, tab,
+      remoteFile: `${remotePath}/${folder}/${filename}`,
+      status: 'waiting',
+      progress: 0,
+    });
+  }
+  uploadQueueCollapsed = false;
+  renderQueue();
+  if (!uploadRunning) processUploadQueue();
+}
+
+async function processUploadQueue() {
+  if (uploadRunning) return;
+  const item = uploadQueue.find(i => i.status === 'waiting');
+  if (!item) {
+    if (needsManifestRegen) {
+      needsManifestRegen = false;
+      await regenerateManifest();
+    } else {
+      progDone();
+    }
+    return;
+  }
+  uploadRunning = true;
+  item.status = 'uploading';
+  activeQueueItem = item;
+  renderQueue();
+  const res = await window.api.uploadFile(item.localPath, item.remoteFile);
+  item.progress = 100;
+  activeQueueItem = null;
+  uploadRunning = false;
+  const stillInQueue = uploadQueue.includes(item);
+  if (stillInQueue) {
+    if (res.ok) {
+      item.status = 'done';
+      needsManifestRegen = true;
+    } else {
+      item.status = 'error';
+      item.errorMsg = res.error;
+      setStatus(`Error uploading ${item.filename}: ${res.error}`, 'error');
+    }
+  }
+  renderQueue();
+  await processUploadQueue();
+}
+
+function renderQueue() {
+  const panel = document.getElementById('queue-panel');
+  if (!panel) return;
+  if (uploadQueue.length === 0) { panel.style.display = 'none'; return; }
+  panel.style.display = 'flex';
+  panel.classList.toggle('collapsed', uploadQueueCollapsed);
+  const done = uploadQueue.filter(i => i.status === 'done').length;
+  document.getElementById('queue-count').textContent = `${done}/${uploadQueue.length}`;
+  const icon = document.getElementById('queue-toggle-icon');
+  if (icon) icon.textContent = uploadQueueCollapsed ? '∨' : '∧';
+  const list = document.getElementById('queue-items-list');
+  list.innerHTML = uploadQueue.map(item => {
+    const up = item.status === 'uploading', dn = item.status === 'done', er = item.status === 'error';
+    let inner = `<div class="q-item-top">
+      <div class="q-dot ${up ? 'uploading' : dn ? 'done' : er ? 'error' : ''}"></div>
+      <div class="q-name${up || dn ? '' : ' muted'}" title="${esc(item.filename)}">${esc(item.filename)}</div>
+      <button class="q-action q-rm" data-id="${item.id}" data-up="${up}" title="Remove">×</button>
+    </div>`;
+    if (up) inner += `<div class="q-item-prog"><div class="q-bar"><div class="q-bar-fill" style="width:${item.progress}%"></div></div><span class="q-pct">${item.progress}%</span></div>`;
+    else if (dn) inner += `<div class="q-item-prog"><div class="q-bar"><div class="q-bar-fill" style="width:100%"></div></div></div>`;
+    else if (er) inner += `<div class="q-item-status error">Error</div>`;
+    return `<div class="q-item" data-id="${item.id}">${inner}</div>`;
+  }).join('');
+  list.querySelectorAll('.q-rm').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = parseInt(btn.dataset.id);
+      const wasUploading = btn.dataset.up === 'true';
+      uploadQueue = uploadQueue.filter(i => i.id !== id);
+      renderQueue();
+      if (wasUploading) await window.api.cancelUpload();
+    });
+  });
+}
+
+const GENERATE_CMD = 'cd /home/server/mujtaba-website && python generate_manifest.py';
+
+async function regenerateManifest() {
+  setStatus('Regenerating manifest…', '');
+  const res = await window.api.execCommand(GENERATE_CMD);
+  if (res.ok) {
+    setStatus('Manifest regenerated — refreshing…', 'success');
+    await loadData();
+  } else {
+    setStatus(`Manifest error: ${res.error}`, 'error');
+  }
+}
+
+// ── SAVE METADATA ──
+async function saveItem(filename, btn, el) {
+  const title = el.querySelector('.f-title').value.trim();
+  const yearEl = el.querySelector('.f-year');
+  const year = yearEl ? yearEl.value.trim() : '';
+  const roleEl = el.querySelector('.f-role');
+  const role = roleEl ? roleEl.value.trim() : '';
+  const descEl = el.querySelector('.f-desc');
+  const description = descEl ? descEl.value.trim() : '';
+
+  metadata[filename] = { title, year, role, description };
+  const res = await window.api.writeJson(remotePath + '/metadata.json', metadata);
+
+  if (res.ok) {
+    const nameEl = el.querySelector('.list-item-name');
+    if (nameEl) nameEl.textContent = title || filename;
+    const metaEl = el.querySelector('.list-item-meta');
+    if (year && metaEl) metaEl.textContent = year;
+    btn.classList.add('saved');
+    btn.lastChild.textContent = ' Saved ✓';
+    setTimeout(() => { btn.classList.remove('saved'); btn.lastChild.textContent = ' Save'; }, 2000);
+    await regenerateManifest();
+  } else {
+    setStatus(`Error saving: ${res.error}`, 'error');
+  }
+}
+
+// ── DELETE ──
+function confirmDelete(filename, tab) {
+  pendingDelete = { filename, tab };
+  document.getElementById('confirm-text').textContent = `Permanently delete "${filename}"? This cannot be undone.`;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
+document.getElementById('confirm-cancel').addEventListener('click', () => {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  pendingDelete = null;
+});
+
+document.getElementById('confirm-delete').addEventListener('click', async () => {
+  if (!pendingDelete) return;
+  const { filename, tab } = pendingDelete;
+  document.getElementById('confirm-overlay').classList.remove('open');
+  pendingDelete = null;
+
+  const folder = FOLDER_MAP[tab];
+  const remoteFile = `${remotePath}/${folder}/${filename}`;
+  setStatus(`Deleting: ${filename}…`, '');
+
+  const res = await window.api.deleteFile(remoteFile);
+
+  // Also delete thumbnail for videos
+  if (res.ok && (tab === 'documentaries' || tab === 'ngo_works' || tab === 'hero_video')) {
+    const base = filename.replace(/\.[^.]+$/, '');
+    await window.api.deleteFile(`${remotePath}/${folder}/${base}.jpg`);
+  }
+  // Delete compressed version for photos
+  if (res.ok && tab === 'photos') {
+    const base = filename.replace(/\.[^.]+$/, '');
+    await window.api.deleteFile(`${remotePath}/pictures/documentary_photography/compressed/${base}.jpg`);
+  }
+
+  // Update metadata
+  if (metadata[filename]) {
+    delete metadata[filename];
+    await window.api.writeJson(remotePath + '/metadata.json', metadata);
+  }
+
+  if (res.ok) {
+    await regenerateManifest();
+  } else {
+    setStatus(`Error: ${res.error}`, 'error');
+  }
+});
+
+// ── HELPERS ──
+function setStatus(msg, type) {
+  const bar = document.getElementById('status-bar');
+  bar.textContent = msg;
+  bar.className = 'status-bar ' + (type || '');
+  if (type === 'success') setTimeout(() => { bar.textContent = ''; bar.className = 'status-bar'; }, 3000);
+}
+
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── THUMBNAILS ──
+async function loadThumbnails() {
+  const imgs = [...document.querySelectorAll('img.remote-img[data-remote]')];
+  await Promise.all(imgs.map(async img => {
+    const p = img.dataset.remote;
+    if (!p) return;
+    const res = await window.api.readFileBase64(p);
+    if (res.ok) {
+      const ext = p.split('.').pop().toLowerCase();
+      const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+      img.src = `data:${mime};base64,${res.data}`;
+      img.style.opacity = '';
+    }
+  }));
+}
+
+// ── THEME ──
+function applyTheme(theme) {
+  document.documentElement.classList.toggle('light', theme === 'light');
+  document.getElementById('theme-sun').style.display = theme === 'light' ? 'none' : '';
+  document.getElementById('theme-moon').style.display = theme === 'light' ? '' : 'none';
+  localStorage.setItem('theme', theme);
+  window.api.setTitleBarOverlay({
+    color: theme === 'light' ? '#F2F0EC' : '#0C0C0B',
+    symbolColor: theme === 'light' ? '#8B6914' : '#C9A96E',
+    height: 32,
+  });
+}
+
+document.getElementById('theme-btn').addEventListener('click', () => {
+  const isLight = document.documentElement.classList.contains('light');
+  applyTheme(isLight ? 'dark' : 'light');
+});
+
+applyTheme(localStorage.getItem('theme') || 'light');
+
+// ── SAVE ALL ──
+document.getElementById('save-all-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('save-all-btn');
+  btn.disabled = true;
+  document.querySelectorAll('.list-item[data-file]').forEach(el => {
+    const file = el.dataset.file;
+    const titleEl = el.querySelector('.f-title');
+    if (!titleEl) return;
+    const yearEl = el.querySelector('.f-year');
+    const roleEl = el.querySelector('.f-role');
+    const descEl = el.querySelector('.f-desc');
+    metadata[file] = {
+      title: titleEl.value.trim(),
+      year: yearEl ? yearEl.value.trim() : (metadata[file]?.year || ''),
+      role: roleEl ? roleEl.value.trim() : (metadata[file]?.role || ''),
+      description: descEl ? descEl.value.trim() : (metadata[file]?.description || ''),
+    };
+  });
+  setStatus('Saving all…', '');
+  const res = await window.api.writeJson(remotePath + '/metadata.json', metadata);
+  btn.disabled = false;
+  if (res.ok) await regenerateManifest();
+  else setStatus('Error: ' + res.error, 'error');
+});
+</script>
+</body>
+</html>
