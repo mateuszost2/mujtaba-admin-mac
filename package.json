@@ -21,13 +21,10 @@
     "appId": "com.mujtaba.admin",
     "productName": "Mujtaba Admin",
     "win": {
-      "target": "nsis",
-      "icon": "assets/icon.ico"
+      "target": "nsis"
     },
     "mac": {
-      "target": "dmg",
-      "icon": "assets/icon.png",
-      "category": "public.app-category.productivity"
+      "target": "dmg"
     },
     "files": [
       "main.js",
