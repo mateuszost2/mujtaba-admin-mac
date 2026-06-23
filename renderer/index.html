@@ -493,16 +493,17 @@ function renderListTab(tab) {
       const meta = metadata[file] || {};
       const title = meta.title || '';
       const year = meta.year || '';
-      const thumbSrc = isPhotos
-        ? remotePath + '/pictures/documentary_photography/compressed/' + file.replace(/\.[^.]+$/, '.jpg')
-        : (item.thumb ? remotePath + '/' + item.thumb : '');
+      const thumbRel = isPhotos
+        ? 'pictures/documentary_photography/compressed/' + file.replace(/\.[^.]+$/, '.jpg')
+        : (item.thumb || `${FOLDER_MAP[tab]}/thumbnails/${file.replace(/\.[^.]+$/, '.jpg')}`);
+      const thumbSrc = remotePath + '/' + thumbRel;
       const displayName = title || file;
       const thumbClass = isPhotos ? 'photo' : 'video';
 
       html += `
         <div class="list-item" data-file="${esc(file)}">
           <div class="list-item-row">
-            <div class="list-thumb ${thumbClass}">
+            <div class="list-thumb ${thumbClass}" data-thumb-rel="${esc(thumbRel)}">
               <img src="" data-remote="${esc(thumbSrc)}" alt="" class="remote-img" onerror="this.style.opacity=0">
             </div>
             <div class="list-item-name">${esc(displayName)}</div>
@@ -547,9 +548,8 @@ function renderListTab(tab) {
     el.querySelector('.list-thumb').addEventListener('click', async () => {
       const files = await window.api.pickFiles('image');
       if (!files.length) return;
-      const base = file.replace(/\.[^.]+$/, '');
-      const folder = FOLDER_MAP[tab];
-      const remoteDest = `${remotePath}/${folder}/${base}.jpg`;
+      const thumbRel = el.querySelector('.list-thumb').dataset.thumbRel;
+      const remoteDest = `${remotePath}/${thumbRel}`;
       setStatus(`Uploading thumbnail for ${file}…`, '');
       const res = await window.api.uploadFile(files[0], remoteDest);
       if (res.ok) {
