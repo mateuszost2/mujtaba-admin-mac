@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Admin panel for Mujtaba Manzoor portfolio",
   "main": "main.js",
+  "engines": {
+    "node": ">=16.20.2"
+  },
   "scripts": {
     "start": "electron .",
     "build": "electron-builder --win",

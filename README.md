@@ -3,7 +3,7 @@
 Aplikacja desktopowa do zarządzania portfolio na Hetzner.
 
 ## Wymagania
-- Node.js (https://nodejs.org) — wersja 18 lub wyższa
+- Node.js (https://nodejs.org) — wersja 16.20.2 lub wyższa (przetestowano z 24.16.0 — nie trzeba instalować najnowszej wersji)
 
 ## Instalacja i uruchomienie
 
