@@ -7,16 +7,21 @@ Aplikacja desktopowa do zarządzania portfolio na Hetzner.
 
 ## Instalacja i uruchomienie
 
-```bash
-# 1. Wejdź do folderu
-cd mujtaba-admin
+1. Zainstaluj Node.js (jednorazowo): [nodejs.org](https://nodejs.org) — wersja LTS, kliknij przez instalator.
+2. Otwórz Terminal (Mac: Cmd+Space → "Terminal").
+3. Przeciągnij folder z projektem (ten folder, np. z Desktopu) na okno Terminala — wpisze się ścieżka. Naciśnij Enter, żeby wejść do folderu.
+4. Zainstaluj zależności (tylko raz, trwa chwilę):
+   ```bash
+   npm install
+   ```
+5. Uruchom aplikację:
+   ```bash
+   npm start
+   ```
 
-# 2. Zainstaluj zależności
-npm install
+Przy kolejnych uruchomieniach wystarczą kroki 2–3 i `npm start` (bez `npm install`).
 
-# 3. Uruchom aplikację
-npm start
-```
+Jeśli `npm install` zgłosi błąd związany z kompilacją (Xcode/command line tools), uruchom najpierw `xcode-select --install`, a potem ponów `npm install`.
 
 ## Budowanie .exe (instalator Windows)
 
