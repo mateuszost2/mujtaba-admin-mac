@@ -26,6 +26,18 @@ npm run build
 
 Plik instalatora pojawi się w folderze `dist/`.
 
+## macOS: "Aplikacja jest uszkodzona"
+
+Aplikacja nie jest podpisana certyfikatem Apple Developer (wymaga płatnego konta, $99/rok), więc Gatekeeper blokuje ją po pobraniu z internetu i pokazuje błąd "is damaged and can't be opened". To nie jest prawdziwe uszkodzenie — wystarczy usunąć flagę kwarantanny.
+
+Po zamontowaniu .dmg i przeniesieniu aplikacji do `/Applications`, otwórz Terminal i wpisz:
+
+```bash
+xattr -cr "/Applications/Mujtaba Admin.app"
+```
+
+Następnie otwórz aplikację normalnie (dwuklik). Jeśli nadal pojawi się ostrzeżenie o "nieznanym developerze", kliknij prawym przyciskiem na aplikację → **Open** → potwierdź **Open** w oknie dialogowym.
+
 ## Połączenie z serwerem
 
 Przy pierwszym uruchomieniu podaj:

@@ -24,7 +24,10 @@
       "target": "nsis"
     },
     "mac": {
-      "target": "dmg"
+      "target": "dmg",
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
     },
     "files": [
       "main.js",
