@@ -96,6 +96,8 @@ html.light .sidebar.collapsed .nav-item:hover { background: rgba(0,0,0,0.03); }
 .field label { display: block; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text3); padding-top: 16px; margin-bottom: 4px; }
 .field input { width: 100%; background: none; border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 300; color: var(--text); padding-bottom: 12px; }
 .field input::placeholder { color: var(--text3); }
+.field select { width: 100%; background: none; border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 300; color: var(--text); padding-bottom: 12px; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236B6760'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 4px center; }
+.field select option { background: var(--sidebar); color: var(--text); }
 .field-row { display: grid; grid-template-columns: 1fr auto; gap: 0; align-items: end; }
 .field-row input { padding-bottom: 12px; }
 .pick-btn { background: none; border: none; cursor: pointer; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); padding: 0 0 13px 16px; font-family: 'DM Sans', sans-serif; white-space: nowrap; transition: color var(--trans); }
@@ -518,6 +520,11 @@ function renderListTab(tab) {
           <div class="edit-panel">
             <div class="field"><label>Title</label><input type="text" class="f-title" value="${esc(title)}"></div>
             ${!isPhotos ? `
+            <div class="field"><label>Category</label><select class="f-cat">
+              <option value="documentaries" ${tab === 'documentaries' ? 'selected' : ''}>Documentaries</option>
+              <option value="ngo_works" ${tab === 'ngo_works' ? 'selected' : ''}>NGO Work</option>
+              <option value="travel_films" ${tab === 'travel_films' ? 'selected' : ''}>Travel Films</option>
+            </select></div>
             <div class="field"><label>Year</label><input type="number" class="f-year" value="${esc(year)}"></div>
             <div class="field"><label>${tab === 'ngo_works' ? 'NGO' : 'My Role'}</label><input type="text" class="f-role" value="${esc(meta.role || '')}"></div>` : ''}
             <div class="field" style="margin-bottom:16px;"><label>Description</label><textarea class="f-desc">${esc(meta.description || '')}</textarea></div>
@@ -804,6 +811,25 @@ async function saveItem(filename, btn, el) {
   const role = roleEl ? roleEl.value.trim() : '';
   const descEl = el.querySelector('.f-desc');
   const description = descEl ? descEl.value.trim() : '';
+  const catEl = el.querySelector('.f-cat');
+  const newCat = catEl ? catEl.value : null;
+
+  // Move file if category changed
+  if (newCat && newCat !== currentTab) {
+    const oldFolder = FOLDER_MAP[currentTab];
+    const newFolder = FOLDER_MAP[newCat];
+    const base = filename.replace(/\.[^.]+$/, '');
+    btn.disabled = true;
+    btn.lastChild.textContent = ' Moving…';
+    const moveRes = await window.api.execCommand(
+      `mv "${remotePath}/${oldFolder}/${filename}" "${remotePath}/${newFolder}/${filename}" && mv "${remotePath}/${oldFolder}/thumbnails/${base}.jpg" "${remotePath}/${newFolder}/thumbnails/${base}.jpg" 2>/dev/null; true`
+    );
+    btn.disabled = false;
+    if (!moveRes.ok) {
+      setStatus(`Error moving file: ${moveRes.error}`, 'error');
+      return;
+    }
+  }
 
   metadata[filename] = { title, year, role, description };
   const res = await window.api.writeJson(remotePath + '/metadata.json', metadata);
