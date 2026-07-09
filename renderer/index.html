@@ -147,7 +147,7 @@ html.light .sidebar.collapsed .nav-item:hover { background: rgba(0,0,0,0.03); }
 .edit-panel.open { display: block; }
 .edit-panel .field { margin-bottom: 0; }
 .edit-panel .field:last-of-type { margin-bottom: 16px; }
-.edit-panel textarea { min-height: 56px; }
+.edit-panel textarea { min-height: 120px; }
 .save-btn { display: flex; align-items: center; gap: 8px; background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text3); padding: 0; transition: color var(--trans); }
 .save-btn:hover { color: var(--accent); }
 .save-btn.saved { color: var(--accent); }
@@ -519,7 +519,7 @@ function renderListTab(tab) {
             <div class="field"><label>Title</label><input type="text" class="f-title" value="${esc(title)}"></div>
             ${!isPhotos ? `
             <div class="field"><label>Year</label><input type="number" class="f-year" value="${esc(year)}"></div>
-            <div class="field"><label>NGO</label><input type="text" class="f-role" value="${esc(meta.role || '')}"></div>` : ''}
+            <div class="field"><label>${tab === 'ngo_works' ? 'NGO' : 'My Role'}</label><input type="text" class="f-role" value="${esc(meta.role || '')}"></div>` : ''}
             <div class="field" style="margin-bottom:16px;"><label>Description</label><textarea class="f-desc">${esc(meta.description || '')}</textarea></div>
             <button class="save-btn"><span class="save-btn-line"></span> Save</button>
           </div>
