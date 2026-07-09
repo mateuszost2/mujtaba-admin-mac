@@ -221,7 +221,6 @@ html.light .sidebar.collapsed .nav-item:hover { background: rgba(0,0,0,0.03); }
 
         <div class="field"><label>Host / IP</label><input id="c-host" type="text" placeholder="mujtabamanzoor.com"></div>
         <div class="field"><label>Username</label><input id="c-user" type="text" placeholder="server"></div>
-        <div class="field"><label>Password</label><input id="c-pass" type="password" placeholder="••••••••"></div>
         <div class="field">
           <label>SSH Key (optional)</label>
           <div class="field-row">
@@ -377,6 +376,10 @@ document.getElementById('clear-key-btn').addEventListener('click', () => {
   updatePassphraseVisibility();
 });
 
+document.getElementById('connect-view').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('connect-btn').click();
+});
+
 document.getElementById('connect-btn').addEventListener('click', async () => {
   const btn = document.getElementById('connect-btn');
   const errEl = document.getElementById('connect-error');
@@ -387,7 +390,7 @@ document.getElementById('connect-btn').addEventListener('click', async () => {
   const config = {
     host: document.getElementById('c-host').value.trim(),
     username: document.getElementById('c-user').value.trim(),
-    password: document.getElementById('c-pass').value,
+
     keyPath: document.getElementById('c-key').value.trim(),
     passphrase: document.getElementById('c-passphrase').value,
     remotePath: '/home/server/mujtaba-website',
@@ -420,7 +423,6 @@ document.getElementById('disconnect-btn').addEventListener('click', async () => 
   uploadQueue = []; uploadRunning = false; uploadQueueCollapsed = false; activeQueueItem = null; needsManifestRegen = false; renderQueue();
   document.getElementById('admin-view').style.display = 'none';
   document.getElementById('connect-view').style.display = 'flex';
-  document.getElementById('c-pass').value = '';
 });
 
 document.getElementById('sidebar-toggle-btn').addEventListener('click', () => {
@@ -517,7 +519,7 @@ function renderListTab(tab) {
             <div class="field"><label>Title</label><input type="text" class="f-title" value="${esc(title)}"></div>
             ${!isPhotos ? `
             <div class="field"><label>Year</label><input type="number" class="f-year" value="${esc(year)}"></div>
-            <div class="field"><label>My Role</label><input type="text" class="f-role" value="${esc(meta.role || '')}"></div>` : ''}
+            <div class="field"><label>NGO</label><input type="text" class="f-role" value="${esc(meta.role || '')}"></div>` : ''}
             <div class="field" style="margin-bottom:16px;"><label>Description</label><textarea class="f-desc">${esc(meta.description || '')}</textarea></div>
             <button class="save-btn"><span class="save-btn-line"></span> Save</button>
           </div>
@@ -632,18 +634,21 @@ function renderSingleTab(tab) {
 
   async function clearExisting() {
     if (!items.length) return;
-    const oldItem = items[0];
-    const oldFile = typeof oldItem === 'object' ? (oldItem.filename || oldItem) : oldItem;
     const folder = FOLDER_MAP[serverTab];
-    await window.api.deleteFile(`${remotePath}/${folder}/${oldFile}`);
-    if (serverTab === 'hero_video') {
-      const base = oldFile.replace(/\.[^.]+$/, '');
-      await window.api.deleteFile(`${remotePath}/${folder}/${base}.jpg`);
+    let metaChanged = false;
+    for (const oldItem of items) {
+      const oldFile = typeof oldItem === 'object' ? (oldItem.filename || oldItem) : oldItem;
+      await window.api.deleteFile(`${remotePath}/${folder}/${oldFile}`);
+      if (serverTab === 'hero_video') {
+        const base = oldFile.replace(/\.[^.]+$/, '');
+        await window.api.deleteFile(`${remotePath}/${folder}/${base}.jpg`);
+      }
+      if (metadata[oldFile]) {
+        delete metadata[oldFile];
+        metaChanged = true;
+      }
     }
-    if (metadata[oldFile]) {
-      delete metadata[oldFile];
-      await window.api.writeJson(remotePath + '/metadata.json', metadata);
-    }
+    if (metaChanged) await window.api.writeJson(remotePath + '/metadata.json', metadata);
   }
 
   const zone = document.getElementById('single-upload-zone');
