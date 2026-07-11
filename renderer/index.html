@@ -108,6 +108,7 @@ html.light .sidebar.collapsed .nav-item:hover { background: rgba(0,0,0,0.03); }
 .connect-btn-line { width: 32px; height: 1px; background: currentColor; transition: width var(--trans); }
 .connect-btn:hover .connect-btn-line { width: 48px; }
 .connect-error { margin-top: 16px; font-size: 11px; color: var(--error); }
+.app-version { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); opacity: 0.5; }
 
 /* ── SECTION HEADER ── */
 .section-head { padding: 10px 32px; height: 44px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); flex-shrink: 0; }
@@ -237,6 +238,7 @@ html.light .sidebar.collapsed .nav-item:hover { background: rgba(0,0,0,0.03); }
           Connect
         </button>
         <div class="connect-error" id="connect-error"></div>
+        <div class="app-version" style="margin-top:40px;">v <span class="ver-date"></span></div>
       </div>
     </div>
   </div>
@@ -308,6 +310,7 @@ html.light .sidebar.collapsed .nav-item:hover { background: rgba(0,0,0,0.03); }
       <div class="sidebar-bottom">
         <button class="save-all-btn" id="save-all-btn">Save All</button>
         <button class="disconnect-btn" id="disconnect-btn">Disconnect</button>
+        <div class="app-version" style="margin-top:12px;text-align:center;">v <span class="ver-date"></span></div>
       </div>
     </div>
 
@@ -349,6 +352,9 @@ const FOLDER_MAP = {
 
 // ── INIT ──
 window.addEventListener('DOMContentLoaded', async () => {
+  const now = new Date();
+  const ver = `${now.getDate()}.${now.getMonth() + 1}.${now.getFullYear()}`;
+  document.querySelectorAll('.ver-date').forEach(el => el.textContent = ver);
   const config = await window.api.loadConfig();
   if (config) {
     document.getElementById('c-host').value = config.host || '';
@@ -707,6 +713,15 @@ let uploadQueueCollapsed = false;
 let uploadIdCounter = 0;
 let activeQueueItem = null;
 let needsManifestRegen = false;
+
+window.api.onConnectionLost(() => {
+  uploadQueue = []; uploadRunning = false; uploadQueueCollapsed = false; activeQueueItem = null; needsManifestRegen = false;
+  renderQueue();
+  document.getElementById('admin-view').style.display = 'none';
+  document.getElementById('connect-view').style.display = 'flex';
+  const errEl = document.getElementById('connect-error');
+  if (errEl) errEl.textContent = 'Connection lost — server did not respond.';
+});
 
 window.api.onUploadProgress(pct => {
   if (!activeQueueItem) return;

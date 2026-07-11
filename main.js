@@ -11,6 +11,7 @@ let currentUploadReadStream = null;
 let currentUploadWriteStream = null;
 let currentUploadResolve = null;
 let uploadCancelled = false;
+let intentionalDisconnect = false;
 
 const CONFIG_PATH = path.join(app.getPath('userData'), 'connection.json');
 
@@ -57,6 +58,8 @@ function connectSsh(config) {
       port: config.port || 22,
       username: config.username,
       readyTimeout: 10000,
+      keepaliveInterval: 10000,
+      keepaliveCountMax: 6,
     };
     if (config.keyPath && fs.existsSync(config.keyPath)) {
       opts.privateKey = fs.readFileSync(config.keyPath);
@@ -116,9 +119,25 @@ ipcMain.handle('pick-files', async (_, accept) => {
 ipcMain.handle('connect', async (_, config) => {
   try {
     if (sshClient) { try { sshClient.end(); } catch {} }
-    sshClient = await connectSsh(config);
-    sftpSession = await getSftp(sshClient);
+    intentionalDisconnect = false;
+    const client = await connectSsh(config);
+    sftpSession = await getSftp(client);
+    sshClient = client;
     connectionConfig = config;
+
+    client.on('error', () => {
+      if (intentionalDisconnect) return;
+      sshClient = null; sftpSession = null;
+      if (mainWindow && !mainWindow.isDestroyed())
+        mainWindow.webContents.send('connection-lost');
+    });
+    client.on('close', () => {
+      if (intentionalDisconnect) return;
+      sshClient = null; sftpSession = null;
+      if (mainWindow && !mainWindow.isDestroyed())
+        mainWindow.webContents.send('connection-lost');
+    });
+
     return { ok: true };
   } catch (e) {
     sshClient = null; sftpSession = null;
@@ -127,6 +146,7 @@ ipcMain.handle('connect', async (_, config) => {
 });
 
 ipcMain.handle('disconnect', async () => {
+  intentionalDisconnect = true;
   if (sshClient) { try { sshClient.end(); } catch {} sshClient = null; sftpSession = null; }
   return true;
 });

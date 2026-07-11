@@ -20,5 +20,9 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.removeAllListeners('upload-progress');
     ipcRenderer.on('upload-progress', (_, pct) => cb(pct));
   },
+  onConnectionLost: (cb) => {
+    ipcRenderer.removeAllListeners('connection-lost');
+    ipcRenderer.on('connection-lost', () => cb());
+  },
   setTitleBarOverlay: (opts) => ipcRenderer.invoke('set-title-bar-overlay', opts),
 });
