@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, powerSaveBlocker } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { Client } = require('ssh2');
@@ -12,6 +12,14 @@ let currentUploadWriteStream = null;
 let currentUploadResolve = null;
 let uploadCancelled = false;
 let intentionalDisconnect = false;
+let powerSaveId = null;
+
+function startPowerSave() {
+  if (powerSaveId === null) powerSaveId = powerSaveBlocker.start('prevent-app-suspension');
+}
+function stopPowerSave() {
+  if (powerSaveId !== null) { powerSaveBlocker.stop(powerSaveId); powerSaveId = null; }
+}
 
 const CONFIG_PATH = path.join(app.getPath('userData'), 'connection.json');
 
@@ -181,6 +189,7 @@ ipcMain.handle('write-json', async (_, remotePath, data) => {
 ipcMain.handle('upload-file', async (_, localPath, remotePath) => {
   if (!sftpSession) return { ok: false, error: 'Not connected' };
   uploadCancelled = false;
+  startPowerSave();
   return new Promise(resolve => {
     let fileSize = 0;
     try { fileSize = fs.statSync(localPath).size; } catch {}
@@ -197,10 +206,12 @@ ipcMain.handle('upload-file', async (_, localPath, remotePath) => {
     });
     writeStream.on('close', () => {
       currentUploadReadStream = null; currentUploadWriteStream = null; currentUploadResolve = null;
+      stopPowerSave();
       if (!uploadCancelled) { mainWindow.webContents.send('upload-progress', 100); resolve({ ok: true }); }
     });
     writeStream.on('error', e => {
       currentUploadReadStream = null; currentUploadWriteStream = null; currentUploadResolve = null;
+      stopPowerSave();
       if (!uploadCancelled) resolve({ ok: false, error: e.message });
     });
     readStream.pipe(writeStream);
@@ -209,6 +220,7 @@ ipcMain.handle('upload-file', async (_, localPath, remotePath) => {
 
 ipcMain.handle('cancel-upload', () => {
   uploadCancelled = true;
+  stopPowerSave();
   if (currentUploadResolve) { currentUploadResolve({ ok: false, error: 'Cancelled' }); currentUploadResolve = null; }
   if (currentUploadReadStream) { try { currentUploadReadStream.destroy(); } catch {} currentUploadReadStream = null; }
   if (currentUploadWriteStream) { try { currentUploadWriteStream.destroy(); } catch {} currentUploadWriteStream = null; }
