@@ -421,6 +421,12 @@ function showAdmin() {
 
 // ── DISCONNECT ──
 document.getElementById('disconnect-btn').addEventListener('click', async () => {
+  if (activeQueueItem) {
+    await window.api.cancelUpload();
+    if (activeQueueItem.remoteFile.startsWith('/tmp/mj_')) {
+      await window.api.execCommand(`rm -f "${activeQueueItem.remoteFile}" 2>/dev/null; true`);
+    }
+  }
   await window.api.disconnect();
   uploadQueue = []; uploadRunning = false; uploadQueueCollapsed = false; activeQueueItem = null; needsManifestRegen = false; renderQueue();
   document.getElementById('admin-view').style.display = 'none';
@@ -639,31 +645,44 @@ function renderSingleTab(tab) {
     btn.addEventListener('click', () => confirmDelete(btn.dataset.file, btn.dataset.tab));
   });
 
-  async function clearExisting() {
-    if (!items.length) return;
+  async function clearExisting(excludeFile) {
     const folder = FOLDER_MAP[serverTab];
-    let metaChanged = false;
-    for (const oldItem of items) {
-      const oldFile = typeof oldItem === 'object' ? (oldItem.filename || oldItem) : oldItem;
-      await window.api.deleteFile(`${remotePath}/${folder}/${oldFile}`);
-      if (serverTab === 'hero_video') {
-        const base = oldFile.replace(/\.[^.]+$/, '');
-        await window.api.deleteFile(`${remotePath}/${folder}/${base}.jpg`);
+    if (serverTab === 'hero_video') {
+      const base = excludeFile ? excludeFile.replace(/\.[^.]+$/, '') : null;
+      const exclude = excludeFile
+        ? `! -name "${excludeFile}" ! -name "${base}.jpg"`
+        : '';
+      await window.api.execCommand(
+        `find "${remotePath}/${folder}" -maxdepth 1 -type f \\( -name "*.mp4" -o -name "*.mov" -o -name "*.webm" -o -name "*.jpg" \\) ${exclude} -delete 2>/dev/null; true`
+      );
+      for (const oldItem of items) {
+        const oldFile = typeof oldItem === 'object' ? (oldItem.filename || oldItem) : oldItem;
+        if (metadata[oldFile]) delete metadata[oldFile];
       }
-      if (metadata[oldFile]) {
-        delete metadata[oldFile];
-        metaChanged = true;
+      await window.api.writeJson(remotePath + '/metadata.json', metadata);
+    } else {
+      if (!items.length) return;
+      let metaChanged = false;
+      for (const oldItem of items) {
+        const oldFile = typeof oldItem === 'object' ? (oldItem.filename || oldItem) : oldItem;
+        await window.api.deleteFile(`${remotePath}/${folder}/${oldFile}`);
+        if (metadata[oldFile]) { delete metadata[oldFile]; metaChanged = true; }
       }
+      if (metaChanged) await window.api.writeJson(remotePath + '/metadata.json', metadata);
     }
-    if (metaChanged) await window.api.writeJson(remotePath + '/metadata.json', metadata);
   }
 
   const zone = document.getElementById('single-upload-zone');
   zone.addEventListener('click', async () => {
     const files = await window.api.pickFiles(accept);
     if (!files.length) return;
-    await clearExisting();
-    uploadFiles([files[0]], serverTab);
+    if (serverTab === 'hero_video') {
+      const newFilename = files[0].split(/[\\/]/).pop();
+      uploadFiles([files[0]], serverTab, () => clearExisting(newFilename));
+    } else {
+      await clearExisting();
+      uploadFiles([files[0]], serverTab);
+    }
   });
   zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--accent)'; });
   zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
@@ -671,8 +690,13 @@ function renderSingleTab(tab) {
     e.preventDefault(); zone.style.borderColor = '';
     const files = [...e.dataTransfer.files].map(f => f.path);
     if (!files.length) return;
-    await clearExisting();
-    uploadFiles([files[0]], serverTab);
+    if (serverTab === 'hero_video') {
+      const newFilename = files[0].split(/[\\/]/).pop();
+      uploadFiles([files[0]], serverTab, () => clearExisting(newFilename));
+    } else {
+      await clearExisting();
+      uploadFiles([files[0]], serverTab);
+    }
   });
 }
 
@@ -702,17 +726,24 @@ document.getElementById('queue-toggle-header').addEventListener('click', () => {
   renderQueue();
 });
 
-function uploadFiles(localPaths, tab) {
+function uploadFiles(localPaths, tab, postUpload) {
   const folder = FOLDER_MAP[tab];
   if (!folder) return;
+  const useTmp = tab === 'documentaries' || tab === 'ngo_works' || tab === 'travel_films';
   for (const localPath of localPaths) {
     const filename = localPath.split(/[\\/]/).pop();
+    const finalRemote = `${remotePath}/${folder}/${filename}`;
+    const tempRemote = useTmp ? `/tmp/mj_${Date.now()}_${filename}` : finalRemote;
+    const moveCallback = useTmp
+      ? async () => { await window.api.execCommand(`mv "${tempRemote}" "${finalRemote}"`); }
+      : null;
     uploadQueue.push({
       id: ++uploadIdCounter,
       localPath, filename, tab,
-      remoteFile: `${remotePath}/${folder}/${filename}`,
+      remoteFile: tempRemote,
       status: 'waiting',
       progress: 0,
+      postUpload: postUpload || moveCallback,
     });
   }
   uploadQueueCollapsed = false;
@@ -744,11 +775,15 @@ async function processUploadQueue() {
   if (stillInQueue) {
     if (res.ok) {
       item.status = 'done';
+      if (item.postUpload) await item.postUpload();
       needsManifestRegen = true;
     } else {
       item.status = 'error';
       item.errorMsg = res.error;
       setStatus(`Error uploading ${item.filename}: ${res.error}`, 'error');
+      if (item.remoteFile.startsWith('/tmp/mj_')) {
+        await window.api.execCommand(`rm -f "${item.remoteFile}" 2>/dev/null; true`);
+      }
     }
   }
   renderQueue();
