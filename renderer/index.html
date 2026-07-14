@@ -358,8 +358,7 @@ const FOLDER_MAP = {
 
 // ── INIT ──
 window.addEventListener('DOMContentLoaded', async () => {
-  const now = new Date();
-  const ver = `${now.getDate()}.${now.getMonth() + 1}.${now.getFullYear()}`;
+  const ver = '14.7.2026';
   document.querySelectorAll('.ver-date').forEach(el => el.textContent = ver);
   const config = await window.api.loadConfig();
   if (config) {
@@ -986,20 +985,29 @@ document.getElementById('confirm-delete').addEventListener('click', async () => 
   pendingDelete = null;
 
   const folder = FOLDER_MAP[tab];
-  const remoteFile = `${remotePath}/${folder}/${filename}`;
   setStatus(`Deleting: ${filename}…`, '');
 
-  const res = await window.api.deleteFile(remoteFile);
+  let res;
+  if (tab === 'hero_video') {
+    // Uploaded file may not have been sanitized/renamed on disk, so its actual
+    // filename can differ from the manifest entry. Use find -delete by type instead.
+    res = await window.api.execCommand(
+      `find "${remotePath}/${folder}" -maxdepth 1 -type f \\( -name "*.mp4" -o -name "*.mov" -o -name "*.webm" -o -name "*.jpg" \\) -delete 2>/dev/null; true`
+    );
+  } else {
+    const remoteFile = `${remotePath}/${folder}/${filename}`;
+    res = await window.api.deleteFile(remoteFile);
 
-  // Also delete thumbnail for videos
-  if (res.ok && (tab === 'documentaries' || tab === 'ngo_works' || tab === 'travel_films' || tab === 'hero_video')) {
-    const base = filename.replace(/\.[^.]+$/, '');
-    await window.api.deleteFile(`${remotePath}/${folder}/${base}.jpg`);
-  }
-  // Delete compressed version for photos
-  if (res.ok && tab === 'photos') {
-    const base = filename.replace(/\.[^.]+$/, '');
-    await window.api.deleteFile(`${remotePath}/pictures/documentary_photography/compressed/${base}.jpg`);
+    // Also delete thumbnail for videos
+    if (res.ok && (tab === 'documentaries' || tab === 'ngo_works' || tab === 'travel_films')) {
+      const base = filename.replace(/\.[^.]+$/, '');
+      await window.api.deleteFile(`${remotePath}/${folder}/${base}.jpg`);
+    }
+    // Delete compressed version for photos
+    if (res.ok && tab === 'photos') {
+      const base = filename.replace(/\.[^.]+$/, '');
+      await window.api.deleteFile(`${remotePath}/pictures/documentary_photography/compressed/${base}.jpg`);
+    }
   }
 
   // Update metadata
