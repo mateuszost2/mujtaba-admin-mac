@@ -223,6 +223,7 @@ html.light .sidebar.collapsed .nav-item:hover { background: rgba(0,0,0,0.03); }
 .q-bar { flex:1; height:1px; background:var(--border); }
 .q-bar-fill { height:100%; background:var(--accent); transition:width 0.12s ease; }
 .q-pct { font-size:8px; color:var(--text3); flex-shrink:0; min-width:22px; text-align:right; font-variant-numeric:tabular-nums; }
+.q-stats { font-size:8px; color:var(--accent); opacity:0.7; padding-left:12px; margin-top:2px; letter-spacing:0.04em; font-variant-numeric:tabular-nums; }
 .q-item-status { font-size:8px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text3); padding:3px 0 0 12px; }
 .q-item-status.error { color:var(--error); }
 </style>
@@ -841,15 +842,40 @@ window.api.onConnectionLost(() => {
   if (errEl) errEl.textContent = 'Connection lost — server did not respond.';
 });
 
-window.api.onUploadProgress(pct => {
+window.api.onUploadProgress(data => {
   if (!activeQueueItem) return;
+  const pct = typeof data === 'object' ? data.pct : data;
   activeQueueItem.progress = pct;
+
+  if (typeof data === 'object' && data.fileSize > 0) {
+    const now = Date.now();
+    const item = activeQueueItem;
+    if (!item.uploadStartTime) { item.uploadStartTime = now; item.lastTransferred = 0; item.speed = 0; }
+    const timeDelta = (now - (item._lastTime || item.uploadStartTime)) / 1000;
+    const bytesDelta = data.transferred - (item.lastTransferred || 0);
+    if (timeDelta > 0.1) {
+      const instant = bytesDelta / timeDelta;
+      item.speed = item.speed ? item.speed * 0.6 + instant * 0.4 : instant;
+      item._lastTime = now;
+      item.lastTransferred = data.transferred;
+    }
+    item.fileSize = data.fileSize;
+    item.eta = item.speed > 0 ? (data.fileSize - data.transferred) / item.speed : null;
+  }
+
   const el = document.querySelector(`.q-item[data-id="${activeQueueItem.id}"]`);
   if (el) {
     const fill = el.querySelector('.q-bar-fill');
     const pctEl = el.querySelector('.q-pct');
+    const statsEl = el.querySelector('.q-stats');
     if (fill) fill.style.width = pct + '%';
     if (pctEl) pctEl.textContent = pct + '%';
+    if (statsEl) {
+      const item = activeQueueItem;
+      const mbps = formatSpeed(item.speed);
+      const eta = item.eta != null ? ' · ' + formatEta(item.eta) : '';
+      statsEl.textContent = mbps + eta;
+    }
   }
   progSet(pct);
 });
@@ -923,6 +949,19 @@ async function processUploadQueue() {
   await processUploadQueue();
 }
 
+function formatSpeed(bytesPerSec) {
+  if (!bytesPerSec) return '';
+  if (bytesPerSec >= 1048576) return (bytesPerSec / 1048576).toFixed(1) + ' MB/s';
+  return Math.round(bytesPerSec / 1024) + ' KB/s';
+}
+
+function formatEta(seconds) {
+  if (!isFinite(seconds) || seconds < 0) return '';
+  if (seconds < 60) return Math.ceil(seconds) + 's';
+  const m = Math.floor(seconds / 60), s = Math.ceil(seconds % 60);
+  return m + 'm ' + s + 's';
+}
+
 function renderQueue() {
   const panel = document.getElementById('queue-panel');
   if (!panel) return;
@@ -941,7 +980,12 @@ function renderQueue() {
       <div class="q-name${up || dn ? '' : ' muted'}" title="${esc(item.filename)}">${esc(item.filename)}</div>
       <button class="q-action q-rm" data-id="${item.id}" data-up="${up}" title="Remove">×</button>
     </div>`;
-    if (up) inner += `<div class="q-item-prog"><div class="q-bar"><div class="q-bar-fill" style="width:${item.progress}%"></div></div><span class="q-pct">${item.progress}%</span></div>`;
+    if (up) {
+      const mbps = formatSpeed(item.speed);
+      const eta = item.eta != null ? ' · ' + formatEta(item.eta) : '';
+      inner += `<div class="q-item-prog"><div class="q-bar"><div class="q-bar-fill" style="width:${item.progress}%"></div></div><span class="q-pct">${item.progress}%</span></div>`;
+      inner += `<div class="q-stats">${mbps}${eta}</div>`;
+    }
     else if (dn) inner += `<div class="q-item-prog"><div class="q-bar"><div class="q-bar-fill" style="width:100%"></div></div></div>`;
     else if (er) inner += `<div class="q-item-status error">Error</div>`;
     return `<div class="q-item" data-id="${item.id}">${inner}</div>`;

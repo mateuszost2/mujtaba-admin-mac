@@ -18,7 +18,7 @@ contextBridge.exposeInMainWorld('api', {
   execCommand:    (cmd)        => ipcRenderer.invoke('exec-command', cmd),
   onUploadProgress: (cb) => {
     ipcRenderer.removeAllListeners('upload-progress');
-    ipcRenderer.on('upload-progress', (_, pct) => cb(pct));
+    ipcRenderer.on('upload-progress', (_, data) => cb(data));
   },
   onConnectionLost: (cb) => {
     ipcRenderer.removeAllListeners('connection-lost');

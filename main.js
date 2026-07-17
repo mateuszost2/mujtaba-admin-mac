@@ -202,7 +202,11 @@ ipcMain.handle('upload-file', async (_, localPath, remotePath) => {
     readStream.on('data', chunk => {
       transferred += chunk.length;
       if (fileSize > 0 && !uploadCancelled)
-        mainWindow.webContents.send('upload-progress', Math.min(99, Math.round(transferred / fileSize * 100)));
+        mainWindow.webContents.send('upload-progress', {
+          pct: Math.min(99, Math.round(transferred / fileSize * 100)),
+          transferred,
+          fileSize,
+        });
     });
     writeStream.on('close', () => {
       currentUploadReadStream = null; currentUploadWriteStream = null; currentUploadResolve = null;
