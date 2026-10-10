@@ -73,12 +73,19 @@ html.light .sidebar.collapsed .nav-item:hover { background: rgba(0,0,0,0.03); }
 .nav-item:hover { color: var(--text2); background: rgba(255,255,255,0.02); }
 .nav-item.active { color: var(--accent); background: rgba(201,169,110,0.06); }
 .nav-item svg { width: 14px; height: 14px; fill: currentColor; flex-shrink: 0; }
+.nav-label { flex: 1; }
+.nav-count { font-size: 9px; letter-spacing: 0.05em; color: var(--text3); border: 1px solid var(--border); border-radius: 10px; padding: 1px 6px; flex-shrink: 0; }
+.nav-item.active .nav-count { color: var(--accent); border-color: var(--accent); }
+.sidebar.collapsed .nav-count { display: none; }
 .sidebar-bottom { padding: 16px 20px; border-top: 1px solid var(--border); }
 .disconnect-btn { background: none; border: 1px solid var(--border); cursor: pointer; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text2); font-family: 'DM Sans', sans-serif; transition: all var(--trans); padding: 8px 0; width: 100%; }
 .disconnect-btn:hover { background: var(--error); border-color: var(--error); color: var(--bg); }
 .save-all-btn { background: none; border: 1px solid var(--accent); cursor: pointer; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); font-family: 'DM Sans', sans-serif; transition: all var(--trans); padding: 8px 0; width: 100%; margin-bottom: 12px; }
 .save-all-btn:hover { background: var(--accent); color: var(--bg); }
 .save-all-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.refresh-btn { background: none; border: 1px solid var(--border); cursor: pointer; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text2); font-family: 'DM Sans', sans-serif; transition: all var(--trans); padding: 8px 0; width: 100%; margin-bottom: 12px; }
+.refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+.refresh-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
 /* ── STATUS BAR ── */
 .status-bar { padding: 0 32px; height: 32px; display: flex; align-items: center; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; border-bottom: 1px solid transparent; transition: all var(--trans); flex-shrink: 0; }
@@ -150,6 +157,9 @@ html.light .sidebar.collapsed .nav-item:hover { background: rgba(0,0,0,0.03); }
 .list-btn.edit:hover, .list-btn.edit.active { color: var(--accent); }
 .list-btn.remove { color: var(--text3); }
 .list-btn.remove:hover { color: var(--error); }
+.list-btn.hide { color: var(--text3); display: flex; align-items: center; padding: 0; }
+.list-btn.hide:hover { color: var(--accent); }
+.list-btn.hide:disabled { opacity: 0.35; cursor: not-allowed; }
 
 /* ── EDIT PANEL ── */
 .edit-panel { display: none; padding: 16px 20px 20px; border-top: 1px solid var(--border); background: var(--bg2); }
@@ -226,6 +236,18 @@ html.light .sidebar.collapsed .nav-item:hover { background: rgba(0,0,0,0.03); }
 .q-stats { font-size:8px; color:var(--accent); opacity:0.7; padding-left:12px; margin-top:2px; letter-spacing:0.04em; font-variant-numeric:tabular-nums; }
 .q-item-status { font-size:8px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text3); padding:3px 0 0 12px; }
 .q-item-status.error { color:var(--error); }
+
+/* ── VERSION INFO BADGE ── */
+.info-badge-wrap { position: fixed; bottom: 14px; right: 14px; z-index: 1000; }
+.info-badge { width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--border); color: var(--text3); font-size: 11px; font-family: Georgia, serif; font-style: italic; display: flex; align-items: center; justify-content: center; cursor: default; background: var(--bg2); transition: all var(--trans); user-select: none; }
+.info-badge-wrap:hover .info-badge { border-color: var(--accent); color: var(--accent); }
+.info-tooltip { position: absolute; bottom: 28px; right: 0; width: 230px; background: var(--bg2); border: 1px solid var(--border); padding: 12px 14px; opacity: 0; visibility: hidden; transform: translateY(4px); transition: all var(--trans); pointer-events: none; }
+.info-badge-wrap:hover .info-tooltip { opacity: 1; visibility: visible; transform: translateY(0); }
+.info-tooltip-version { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+.info-tooltip-title { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; }
+.info-tooltip ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.info-tooltip li { font-size: 11px; color: var(--text2); line-height: 1.4; padding-left: 10px; position: relative; }
+.info-tooltip li::before { content: '—'; position: absolute; left: 0; color: var(--text3); }
 </style>
 </head>
 <body>
@@ -293,26 +315,37 @@ html.light .sidebar.collapsed .nav-item:hover { background: rgba(0,0,0,0.03); }
         <button class="nav-item active" data-tab="documentaries">
           <svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V4h-4z"/></svg>
           <span class="nav-label">Documentaries</span>
+          <span class="nav-count" data-count="documentaries"></span>
         </button>
         <button class="nav-item" data-tab="ngo_works">
           <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
           <span class="nav-label">NGO Work</span>
+          <span class="nav-count" data-count="ngo_works"></span>
         </button>
         <button class="nav-item" data-tab="travel_films">
           <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56a8.03 8.03 0 0 1 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.81 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.987 7.987 0 0 1 5.07 16zm2.95-8H5.07a7.987 7.987 0 0 1 4.33-3.56C8.8 5.55 8.34 6.75 8.02 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>
           <span class="nav-label">Travel Vlogs</span>
+          <span class="nav-count" data-count="travel_films"></span>
         </button>
         <button class="nav-item" data-tab="photos">
           <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
           <span class="nav-label">Photography</span>
+          <span class="nav-count" data-count="photos"></span>
         </button>
         <button class="nav-item" data-tab="hero_video">
           <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
           <span class="nav-label">Hero Video</span>
+          <span class="nav-count" data-count="hero_video"></span>
         </button>
         <button class="nav-item" data-tab="about_photo">
           <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
           <span class="nav-label">About Photo</span>
+          <span class="nav-count" data-count="about_photo"></span>
+        </button>
+        <button class="nav-item" data-tab="hidden" style="border-top:1px solid var(--border);margin-top:4px;padding-top:12px;" title="Not shown on the website">
+          <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/><path d="M3 3l18 18" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+          <span class="nav-label">Hidden</span>
+          <span class="nav-count" data-count="hidden"></span>
         </button>
       </nav>
       <div id="queue-panel" style="display:none;">
@@ -324,6 +357,7 @@ html.light .sidebar.collapsed .nav-item:hover { background: rgba(0,0,0,0.03); }
         <div id="queue-items-list"></div>
       </div>
       <div class="sidebar-bottom">
+        <button class="refresh-btn" id="refresh-manifest-btn" title="Re-run generate_manifest.py on the server and reload">Refresh Data</button>
         <button class="save-all-btn" id="save-all-btn">Save All</button>
         <button class="disconnect-btn" id="disconnect-btn">Disconnect</button>
         <div class="app-version" style="margin-top:12px;text-align:center;">v <span class="ver-date"></span></div>
@@ -336,6 +370,15 @@ html.light .sidebar.collapsed .nav-item:hover { background: rgba(0,0,0,0.03); }
         <div id="tab-content"></div>
       </div>
     </div>
+  </div>
+</div>
+
+<div class="info-badge-wrap" id="info-badge-wrap">
+  <div class="info-badge">i</div>
+  <div class="info-tooltip">
+    <div class="info-tooltip-version">v<span class="ver-date"></span></div>
+    <div class="info-tooltip-title">What's new</div>
+    <ul id="info-tooltip-list"></ul>
   </div>
 </div>
 
@@ -353,9 +396,23 @@ html.light .sidebar.collapsed .nav-item:hover { background: rgba(0,0,0,0.03); }
 <script>
 let manifest = {};
 let metadata = {};
+let vimeoState = {};
 let currentTab = 'documentaries';
+
+// Vimeo-sourced items have filename:null and src:"vimeo:<id>" — there's no
+// local file, so they're keyed/edited via vimeo_state.json instead of
+// metadata.json (that's what generate_manifest.py reads for them).
+function vimeoIdOf(item) {
+  if (item && typeof item === 'object' && typeof item.src === 'string' && item.src.startsWith('vimeo:')) {
+    return item.src.slice('vimeo:'.length);
+  }
+  return null;
+}
 let remotePath = '';
 let pendingDelete = null;
+// filename -> { fromTab, toCat } for local items whose Category dropdown was
+// changed but not yet saved via the per-item Save button.
+let pendingCategoryMoves = {};
 
 const FOLDER_MAP = {
   documentaries: 'videos/documentaries',
@@ -364,12 +421,35 @@ const FOLDER_MAP = {
   photos:        'pictures/documentary_photography',
   hero_video:    'videos/main_video',
   about_photo:   'pictures/about_me_pic',
+  hidden:        'videos/hidden',
+};
+
+// ── CHANGELOG ──
+const CHANGELOG = {
+  '26.10.11': [
+    'Fixed: videos moved to "None" were disappearing from that tab after a refresh',
+  ],
+  '26.10.10': [
+    'Added a "None" category/tab — videos moved there are hidden from the website',
+    'Category dropdown can now move a video to/from "None"',
+  ],
+  '26.10.9': [
+    'Added this version badge — hover for release notes',
+    'Hero video supports a crop position control (top / center / bottom)',
+    'Video uploads now trigger HLS transcoding in the background automatically',
+    'Manifest refresh no longer wipes the custom hero position or about text',
+  ],
 };
 
 // ── INIT ──
 window.addEventListener('DOMContentLoaded', async () => {
-  const ver = '26.7.17';
+  const ver = '26.10.10';
   document.querySelectorAll('.ver-date').forEach(el => el.textContent = ver);
+  const changelogList = document.getElementById('info-tooltip-list');
+  if (changelogList) {
+    const changes = CHANGELOG[ver] || [];
+    changelogList.innerHTML = changes.map(c => `<li>${esc(c)}</li>`).join('') || '<li>No changes logged</li>';
+  }
   const config = await window.api.loadConfig();
   if (config) {
     document.getElementById('c-host').value = config.host || '';
@@ -428,6 +508,7 @@ document.getElementById('connect-btn').addEventListener('click', async () => {
 
   if (res.ok) {
     await window.api.saveConfig(config);
+    window.api.execCommand(`mkdir -p "${remotePath}/${FOLDER_MAP.hidden}/thumbnails"`).catch(() => {});
     showAdmin();
     await loadData();
   } else {
@@ -472,12 +553,31 @@ async function loadData() {
   setStatus('Loading…', '');
   const mRes = await window.api.readJson(remotePath + '/manifest.json');
   const mdRes = await window.api.readJson(remotePath + '/metadata.json');
+  const vsRes = await window.api.readJson(remotePath + '/vimeo_state.json');
   if (mRes.ok) manifest = mRes.data;
   else { progDone(); setStatus('Error loading manifest: ' + mRes.error, 'error'); return; }
   if (mdRes.ok) metadata = mdRes.data;
+  if (vsRes.ok) vimeoState = vsRes.data;
   progDone();
   setStatus('', '');
+  updateNavCounts();
   renderTab(currentTab);
+}
+
+function updateNavCounts() {
+  const counts = {
+    documentaries: manifest.documentaries,
+    ngo_works: manifest.ngo_works,
+    travel_films: manifest.travel_films,
+    photos: manifest.photos,
+    hidden: manifest.hidden,
+    hero_video: manifest.main_video,
+    about_photo: manifest.about_img,
+  };
+  document.querySelectorAll('.nav-count').forEach(el => {
+    const list = counts[el.dataset.count];
+    el.textContent = Array.isArray(list) ? list.length : 0;
+  });
 }
 
 // ── TABS ──
@@ -502,13 +602,14 @@ function renderTab(tab) {
 function renderListTab(tab) {
   const isPhotos = tab === 'photos';
   const items = manifest[tab] || [];
-  const labels = { documentaries: 'Documentaries', ngo_works: 'NGO Work', travel_films: 'Travel Vlogs', photos: 'Photography' };
+  const labels = { documentaries: 'Documentaries', ngo_works: 'NGO Work', travel_films: 'Travel Vlogs', photos: 'Photography', hidden: 'Hidden' };
 
   let html = `
     <div class="section-head">
       <span class="section-head-title">${labels[tab]}</span>
       <span class="section-head-count">${items.length} item${items.length !== 1 ? 's' : ''}</span>
     </div>
+    ${tab === 'hidden' ? `<div class="empty-state" style="padding:0 0 14px;text-align:left;opacity:0.6;">Not shown on the website. Newly fetched Vimeo videos land here by default; move a video out of here to publish it.</div>` : ''}
     <div class="upload-zone" id="upload-zone">
       <div class="upload-zone-text">Drop files here or <span>click to upload</span></div>
       <div class="upload-zone-text" style="opacity:0.5;">${isPhotos ? 'jpg, png, webp' : 'mp4, mov, webm'}</div>
@@ -520,28 +621,33 @@ function renderListTab(tab) {
     html += `<div class="empty-state">No files in this category</div>`;
   } else {
     items.forEach(item => {
-      const file = typeof item === 'object' ? (item.filename || item) : item;
-      const meta = metadata[file] || {};
+      const vimeoId = vimeoIdOf(item);
+      const file = vimeoId ? item.src : (typeof item === 'object' ? (item.filename || item) : item);
+      const meta = vimeoId ? (vimeoState[vimeoId] || {}) : (metadata[file] || {});
       const title = meta.title || '';
       const year = meta.year || '';
+      const isExternalThumb = vimeoId && /^https?:\/\//.test(item.thumb || '');
       const thumbRel = isPhotos
         ? 'pictures/documentary_photography/compressed/' + file.replace(/\.[^.]+$/, '.jpg')
         : (item.thumb || `${FOLDER_MAP[tab]}/thumbnails/${file.replace(/\.[^.]+$/, '.jpg')}`);
-      const thumbSrc = remotePath + '/' + thumbRel;
-      const displayName = title || file;
+      const thumbSrc = isExternalThumb ? item.thumb : remotePath + '/' + thumbRel;
+      const displayName = title || (vimeoId ? `Vimeo ${vimeoId}` : file);
       const thumbClass = isPhotos ? 'photo' : 'video';
 
       html += `
-        <div class="list-item" data-file="${esc(file)}" draggable="true">
+        <div class="list-item" data-file="${esc(file)}" ${vimeoId ? `data-vimeo-id="${esc(vimeoId)}"` : ''} draggable="true">
           <div class="list-item-row">
             <div class="drag-handle" title="Drag to reorder"><svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.5"/><circle cx="7" cy="3" r="1.5"/><circle cx="3" cy="8" r="1.5"/><circle cx="7" cy="8" r="1.5"/><circle cx="3" cy="13" r="1.5"/><circle cx="7" cy="13" r="1.5"/></svg></div>
-            <div class="list-thumb ${thumbClass}" data-thumb-rel="${esc(thumbRel)}">
-              <img src="" data-remote="${esc(thumbSrc)}" alt="" class="remote-img" onerror="this.style.opacity=0">
+            <div class="list-thumb ${thumbClass}" data-thumb-rel="${esc(thumbRel)}" ${isExternalThumb ? 'data-external="1"' : ''}>
+              <img src="${isExternalThumb ? esc(thumbSrc) : ''}" data-remote="${isExternalThumb ? '' : esc(thumbSrc)}" alt="" class="remote-img" onerror="this.style.opacity=0">
             </div>
             <div class="list-item-name">${esc(displayName)}</div>
             ${year ? `<div class="list-item-meta">${esc(year)}</div>` : ''}
             <div class="list-item-actions">
               <button class="list-btn edit">Edit</button>
+              ${(!isPhotos && tab !== 'hidden') ? `<button class="list-btn hide" title="Hide">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>` : ''}
               <button class="list-btn remove">Remove</button>
             </div>
           </div>
@@ -552,6 +658,7 @@ function renderListTab(tab) {
               <option value="documentaries" ${tab === 'documentaries' ? 'selected' : ''}>Documentaries</option>
               <option value="ngo_works" ${tab === 'ngo_works' ? 'selected' : ''}>NGO Work</option>
               <option value="travel_films" ${tab === 'travel_films' ? 'selected' : ''}>Travel Vlogs</option>
+              <option value="hidden" ${tab === 'hidden' ? 'selected' : ''}>Hidden</option>
             </select></div>
             <div class="field"><label>Year</label><input type="number" class="f-year" value="${esc(year)}"></div>
             <div class="field"><label>${tab === 'ngo_works' ? 'NGO' : 'My Role'}</label><input type="text" class="f-role" value="${esc(meta.role || '')}"></div>` : ''}
@@ -567,6 +674,7 @@ function renderListTab(tab) {
 
   // Load thumbnails
   document.querySelectorAll('.remote-img').forEach(async img => {
+    if (!img.dataset.remote) return;
     const res = await window.api.readFileBase64(img.dataset.remote);
     if (res.ok) img.src = 'data:image/jpeg;base64,' + res.data;
   });
@@ -574,6 +682,7 @@ function renderListTab(tab) {
   // Edit toggles
   document.querySelectorAll('.list-item').forEach(el => {
     const file = el.dataset.file;
+    const vimeoId = el.dataset.vimeoId || null;
     const editBtn = el.querySelector('.list-btn.edit');
     const panel = el.querySelector('.edit-panel');
     editBtn.addEventListener('click', () => {
@@ -582,25 +691,59 @@ function renderListTab(tab) {
       editBtn.textContent = open ? 'Close' : 'Edit';
     });
     el.querySelector('.list-btn.remove').addEventListener('click', () => confirmDelete(file, tab));
-    el.querySelector('.list-thumb').addEventListener('click', async () => {
-      const files = await window.api.pickFiles('image');
-      if (!files.length) return;
-      const thumbRel = el.querySelector('.list-thumb').dataset.thumbRel;
-      const remoteDest = `${remotePath}/${thumbRel}`;
-      setStatus(`Uploading thumbnail for ${file}…`, '');
-      const res = await window.api.uploadFile(files[0], remoteDest);
-      if (res.ok) {
-        setStatus(`Thumbnail set for ${file}`, 'success');
-        const img = el.querySelector('.remote-img');
-        if (img) {
-          const r = await window.api.readFileBase64(remoteDest);
-          if (r.ok) img.src = 'data:image/jpeg;base64,' + r.data;
+    const hideBtn = el.querySelector('.list-btn.hide');
+    if (hideBtn) hideBtn.addEventListener('click', () => hideItem(file, vimeoId, tab, hideBtn));
+    const thumbEl = el.querySelector('.list-thumb');
+    if (thumbEl.dataset.external !== '1') {
+      thumbEl.addEventListener('click', async () => {
+        const files = await window.api.pickFiles('image');
+        if (!files.length) return;
+        const thumbRel = thumbEl.dataset.thumbRel;
+        const remoteDest = `${remotePath}/${thumbRel}`;
+        setStatus(`Uploading thumbnail for ${file}…`, '');
+        const res = await window.api.uploadFile(files[0], remoteDest);
+        if (res.ok) {
+          setStatus(`Thumbnail set for ${file}`, 'success');
+          const img = el.querySelector('.remote-img');
+          if (img) {
+            const r = await window.api.readFileBase64(remoteDest);
+            if (r.ok) img.src = 'data:image/jpeg;base64,' + r.data;
+          }
+        } else {
+          setStatus(`Error: ${res.error}`, 'error');
         }
-      } else {
-        setStatus(`Error: ${res.error}`, 'error');
-      }
-    });
-    el.querySelector('.save-btn').addEventListener('click', function() { saveItem(file, this, el); });
+      });
+    }
+    el.querySelector('.save-btn').addEventListener('click', function() { saveItem(file, this, el, vimeoId); });
+
+    // Keep `metadata` in sync as the user types, so edits survive switching
+    // tabs — "Save All" only ever wrote whatever the DOM currently showed
+    // for the active tab, silently losing edits made on other tabs.
+    const titleEl = el.querySelector('.f-title');
+    const yearEl = el.querySelector('.f-year');
+    const roleEl = el.querySelector('.f-role');
+    const descEl = el.querySelector('.f-desc');
+    const catEl = el.querySelector('.f-cat');
+    const syncMeta = () => {
+      const store = vimeoId ? (vimeoState[vimeoId] ||= {}) : (metadata[file] ||= {});
+      store.title = titleEl ? titleEl.value.trim() : (store.title || '');
+      store.year = yearEl ? yearEl.value.trim() : (store.year || '');
+      store.role = roleEl ? roleEl.value.trim() : (store.role || '');
+      store.description = descEl ? descEl.value.trim() : (store.description || '');
+      if (vimeoId && catEl) store.category = catEl.value;
+    };
+    [titleEl, yearEl, roleEl, descEl, catEl].forEach(f => f && f.addEventListener('input', syncMeta));
+
+    // Category changes for local files need a physical file move (done by
+    // the per-item Save button or by Save All below), not just a metadata
+    // write — track them here so Save All picks them up even after the
+    // user switches tabs and this DOM is torn down.
+    if (catEl && !vimeoId) {
+      catEl.addEventListener('change', () => {
+        if (catEl.value !== tab) pendingCategoryMoves[file] = { fromTab: tab, toCat: catEl.value };
+        else delete pendingCategoryMoves[file];
+      });
+    }
   });
 
   // Drag-and-drop reorder
@@ -693,6 +836,16 @@ function renderSingleTab(tab) {
     itemsHtml += `</div>`;
   }
 
+  const positionHtml = isVideo ? (() => {
+    const cur = manifest.hero_position || 'center';
+    return `<div class="field" style="padding:14px 0 12px;">
+      <label style="font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:10px;">Video crop position</label>
+      <div style="display:flex;gap:6px;">
+        ${['top','center','bottom'].map(p => `<button class="hero-pos-btn${cur===p?' active':''}" data-pos="${p}" style="flex:1;padding:7px 0;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;border:1px solid ${cur===p?'var(--accent)':'var(--border)'};background:${cur===p?'rgba(201,169,110,0.08)':'none'};color:${cur===p?'var(--accent)':'var(--text3)'};cursor:pointer;font-family:'DM Sans',sans-serif;transition:all var(--trans);">${p}</button>`).join('')}
+      </div>
+    </div>`;
+  })() : '';
+
   document.getElementById('tab-content').innerHTML = `
     <div class="section-head">
       <span class="section-head-title">${title}</span>
@@ -704,7 +857,27 @@ function renderSingleTab(tab) {
         <div class="single-upload-zone-text" style="opacity:0.5;">${hint}</div>
       </div>
       ${itemsHtml}
+      ${positionHtml}
     </div>`;
+
+  document.querySelectorAll('.hero-pos-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const pos = btn.dataset.pos;
+      manifest.hero_position = pos;
+      const res = await window.api.writeJson(remotePath + '/manifest.json', manifest);
+      if (res.ok) {
+        setStatus(`Crop position set to "${pos}"`, 'success');
+        document.querySelectorAll('.hero-pos-btn').forEach(b => {
+          const active = b.dataset.pos === pos;
+          b.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
+          b.style.background = active ? 'rgba(201,169,110,0.08)' : 'none';
+          b.style.color = active ? 'var(--accent)' : 'var(--text3)';
+        });
+      } else {
+        setStatus('Error saving position', 'error');
+      }
+    });
+  });
 
   document.querySelectorAll('.single-remove').forEach(btn => {
     btn.addEventListener('click', () => confirmDelete(btn.dataset.file, btn.dataset.tab));
@@ -936,6 +1109,17 @@ async function processUploadQueue() {
       item.status = 'done';
       if (item.postUpload) await item.postUpload();
       needsManifestRegen = true;
+      // Trigger HLS transcoding in background for video uploads
+      const isVideo = /\.(mp4|mov|webm)$/i.test(item.filename);
+      const videoTabs = ['documentaries', 'ngo_works', 'travel_films', 'hero_video', 'hidden'];
+      if (isVideo && videoTabs.includes(item.tab)) {
+        const folder = FOLDER_MAP[item.tab];
+        const finalPath = `${remotePath}/${folder}/${item.filename}`;
+        const scriptPath = `${remotePath}/transcode_hls.sh`;
+        const logPath = `${remotePath}/transcode.log`;
+        window.api.execCommand(`nohup bash "${scriptPath}" "${finalPath}" >> "${logPath}" 2>&1 &`).catch(() => {});
+        setStatus(`Uploaded — HLS transcoding in background (few minutes)…`, 'success');
+      }
     } else {
       item.status = 'error';
       item.errorMsg = res.error;
@@ -1004,20 +1188,32 @@ function renderQueue() {
 const GENERATE_CMD = 'cd /home/server/mujtaba-website && python generate_manifest.py';
 
 async function applyCustomOrderToManifest() {
-  if (!metadata._order) return;
   const mRes = await window.api.readJson(remotePath + '/manifest.json');
   if (!mRes.ok) return;
   const mf = mRes.data;
   let changed = false;
-  for (const [tab, order] of Object.entries(metadata._order)) {
-    if (!mf[tab]) continue;
-    const map = {};
-    mf[tab].forEach(item => { map[item.filename] = item; });
-    const reordered = order.map(f => map[f]).filter(Boolean);
-    const rest = mf[tab].filter(item => !order.includes(item.filename));
-    mf[tab] = [...reordered, ...rest];
+
+  // Restore custom fields wiped by generate_manifest.py on server
+  if (manifest.hero_position && mf.hero_position !== manifest.hero_position) {
+    mf.hero_position = manifest.hero_position;
     changed = true;
   }
+  if (manifest.about_text && JSON.stringify(mf.about_text) !== JSON.stringify(manifest.about_text)) {
+    mf.about_text = manifest.about_text;
+    changed = true;
+  }
+  if (metadata._order) {
+    for (const [tab, order] of Object.entries(metadata._order)) {
+      if (!mf[tab]) continue;
+      const map = {};
+      mf[tab].forEach(item => { map[item.filename] = item; });
+      const reordered = order.map(f => map[f]).filter(Boolean);
+      const rest = mf[tab].filter(item => !order.includes(item.filename));
+      mf[tab] = [...reordered, ...rest];
+      changed = true;
+    }
+  }
+
   if (changed) await window.api.writeJson(remotePath + '/manifest.json', mf);
 }
 
@@ -1026,15 +1222,57 @@ async function regenerateManifest() {
   const res = await window.api.execCommand(GENERATE_CMD);
   if (res.ok) {
     await applyCustomOrderToManifest();
-    setStatus('Manifest regenerated — refreshing…', 'success');
     await loadData();
+
+    const stdout = res.stdout || '';
+    const apiErr = stdout.match(/vimeo api error: (.+)/);
+    const profile = stdout.match(/vimeo profile \(([^)]*)\): (\d+) video/);
+    if (apiErr) {
+      setStatus(`Manifest regenerated, but Vimeo fetch failed: ${apiErr[1]}`, 'error');
+    } else if (profile) {
+      setStatus(`Manifest regenerated — Vimeo (${profile[1]}): ${profile[2]} video(s)`, 'success');
+    } else {
+      setStatus('Manifest regenerated, but Vimeo sync did not run — check VIMEO_ACCESS_TOKEN/VIMEO_USER on the server', 'error');
+    }
   } else {
     setStatus(`Manifest error: ${res.error}`, 'error');
   }
 }
 
 // ── SAVE METADATA ──
-async function saveItem(filename, btn, el) {
+async function hideItem(filename, vimeoId, tab, btn) {
+  btn.disabled = true;
+  if (vimeoId) {
+    vimeoState[vimeoId] = { ...(vimeoState[vimeoId] || {}), category: 'hidden' };
+    const res = await window.api.writeJson(remotePath + '/vimeo_state.json', vimeoState);
+    if (!res.ok) {
+      setStatus(`Error hiding: ${res.error}`, 'error');
+      btn.disabled = false;
+      return;
+    }
+  } else {
+    const res = await moveItemCategory(filename, tab, 'hidden');
+    if (!res.ok) {
+      setStatus(`Error hiding: ${res.error}`, 'error');
+      btn.disabled = false;
+      return;
+    }
+    delete pendingCategoryMoves[filename];
+  }
+  setStatus('Hidden — refreshing…', 'success');
+  await regenerateManifest();
+}
+
+async function moveItemCategory(filename, fromTab, toCat) {
+  const oldFolder = FOLDER_MAP[fromTab];
+  const newFolder = FOLDER_MAP[toCat];
+  const base = filename.replace(/\.[^.]+$/, '');
+  return window.api.execCommand(
+    `mkdir -p "${remotePath}/${newFolder}/thumbnails" && mv "${remotePath}/${oldFolder}/${filename}" "${remotePath}/${newFolder}/${filename}" && mv "${remotePath}/${oldFolder}/thumbnails/${base}.jpg" "${remotePath}/${newFolder}/thumbnails/${base}.jpg" 2>/dev/null; true`
+  );
+}
+
+async function saveItem(filename, btn, el, vimeoId) {
   const title = el.querySelector('.f-title').value.trim();
   const yearEl = el.querySelector('.f-year');
   const year = yearEl ? yearEl.value.trim() : '';
@@ -1045,21 +1283,38 @@ async function saveItem(filename, btn, el) {
   const catEl = el.querySelector('.f-cat');
   const newCat = catEl ? catEl.value : null;
 
+  // Vimeo-sourced item: no local file to move, just repoint its category —
+  // generate_manifest.py reads title/year/role/description/category for
+  // these straight out of vimeo_state.json, not metadata.json.
+  if (vimeoId) {
+    vimeoState[vimeoId] = { ...(vimeoState[vimeoId] || {}), title, year, role, description, category: newCat || currentTab };
+    const vRes = await window.api.writeJson(remotePath + '/vimeo_state.json', vimeoState);
+    if (vRes.ok) {
+      const nameEl = el.querySelector('.list-item-name');
+      if (nameEl) nameEl.textContent = title || `Vimeo ${vimeoId}`;
+      const metaEl = el.querySelector('.list-item-meta');
+      if (year && metaEl) metaEl.textContent = year;
+      btn.classList.add('saved');
+      btn.lastChild.textContent = ' Saved ✓';
+      setTimeout(() => { btn.classList.remove('saved'); btn.lastChild.textContent = ' Save'; }, 2000);
+      await regenerateManifest();
+    } else {
+      setStatus(`Error saving: ${vRes.error}`, 'error');
+    }
+    return;
+  }
+
   // Move file if category changed
   if (newCat && newCat !== currentTab) {
-    const oldFolder = FOLDER_MAP[currentTab];
-    const newFolder = FOLDER_MAP[newCat];
-    const base = filename.replace(/\.[^.]+$/, '');
     btn.disabled = true;
     btn.lastChild.textContent = ' Moving…';
-    const moveRes = await window.api.execCommand(
-      `mv "${remotePath}/${oldFolder}/${filename}" "${remotePath}/${newFolder}/${filename}" && mv "${remotePath}/${oldFolder}/thumbnails/${base}.jpg" "${remotePath}/${newFolder}/thumbnails/${base}.jpg" 2>/dev/null; true`
-    );
+    const moveRes = await moveItemCategory(filename, currentTab, newCat);
     btn.disabled = false;
     if (!moveRes.ok) {
       setStatus(`Error moving file: ${moveRes.error}`, 'error');
       return;
     }
+    delete pendingCategoryMoves[filename];
   }
 
   metadata[filename] = { title, year, role, description };
@@ -1185,28 +1440,76 @@ document.getElementById('theme-btn').addEventListener('click', () => {
 applyTheme(localStorage.getItem('theme') || 'light');
 
 // ── SAVE ALL ──
+document.getElementById('refresh-manifest-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('refresh-manifest-btn');
+  btn.disabled = true;
+  await regenerateManifest();
+  btn.disabled = false;
+});
+
 document.getElementById('save-all-btn').addEventListener('click', async () => {
   const btn = document.getElementById('save-all-btn');
   btn.disabled = true;
+
+  // `metadata` is kept live-synced from every tab's fields as the user types
+  // (see syncMeta in renderListTab), which covers edits made on tabs other
+  // than the one currently on screen. As a safety net, also re-read the
+  // currently visible tab's fields directly here, in case anything slipped
+  // past the input listeners (e.g. a field edited and never blurred/typed
+  // into again before clicking this button).
   document.querySelectorAll('.list-item[data-file]').forEach(el => {
     const file = el.dataset.file;
+    const vimeoId = el.dataset.vimeoId || null;
     const titleEl = el.querySelector('.f-title');
     if (!titleEl) return;
     const yearEl = el.querySelector('.f-year');
     const roleEl = el.querySelector('.f-role');
     const descEl = el.querySelector('.f-desc');
-    metadata[file] = {
-      title: titleEl.value.trim(),
-      year: yearEl ? yearEl.value.trim() : (metadata[file]?.year || ''),
-      role: roleEl ? roleEl.value.trim() : (metadata[file]?.role || ''),
-      description: descEl ? descEl.value.trim() : (metadata[file]?.description || ''),
-    };
+    const catEl = el.querySelector('.f-cat');
+    const store = vimeoId ? (vimeoState[vimeoId] ||= {}) : (metadata[file] ||= {});
+    store.title = titleEl.value.trim();
+    store.year = yearEl ? yearEl.value.trim() : (store.year || '');
+    store.role = roleEl ? roleEl.value.trim() : (store.role || '');
+    store.description = descEl ? descEl.value.trim() : (store.description || '');
+    if (catEl) {
+      if (vimeoId) {
+        store.category = catEl.value;
+      } else if (catEl.value !== currentTab) {
+        pendingCategoryMoves[file] = { fromTab: currentTab, toCat: catEl.value };
+      }
+    }
   });
+
+  // Category changes for local files need the actual file (and thumbnail)
+  // moved on the server before the next manifest regen will pick up the
+  // new bucket — metadata.json alone doesn't carry a category.
+  const moves = Object.entries(pendingCategoryMoves);
+  if (moves.length) {
+    setStatus(`Moving ${moves.length} file(s)…`, '');
+    const results = await Promise.all(
+      moves.map(([file, { fromTab, toCat }]) => moveItemCategory(file, fromTab, toCat))
+    );
+    const failed = results.findIndex(r => !r.ok);
+    if (failed !== -1) {
+      btn.disabled = false;
+      setStatus(`Error moving ${moves[failed][0]}: ${results[failed].error}`, 'error');
+      return;
+    }
+    moves.forEach(([file]) => delete pendingCategoryMoves[file]);
+  }
+
   setStatus('Saving all…', '');
-  const res = await window.api.writeJson(remotePath + '/metadata.json', metadata);
+  const [mdRes, vRes] = await Promise.all([
+    window.api.writeJson(remotePath + '/metadata.json', metadata),
+    window.api.writeJson(remotePath + '/vimeo_state.json', vimeoState),
+  ]);
   btn.disabled = false;
-  if (res.ok) await regenerateManifest();
-  else setStatus('Error: ' + res.error, 'error');
+  if (mdRes.ok && vRes.ok) {
+    setStatus('All changes saved — refreshing…', 'success');
+    await regenerateManifest();
+  } else {
+    setStatus('Error: ' + (mdRes.error || vRes.error), 'error');
+  }
 });
 </script>
 </body>
